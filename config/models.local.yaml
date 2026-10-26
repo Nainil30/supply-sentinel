@@ -1,0 +1,8 @@
+# Written by setup: Ollama models installed and tool-call tested on this machine.
+local:
+  base_url: http://localhost:11434
+  roles:
+    specialist: {model: "qwen3:8b"}
+    extractor:  {model: "qwen3:8b"}
+    writer:     {model: "qwen3:8b"}
+    judge:      {model: "gemma4:e4b"}
