@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Generated data and state
+data/snapshots/
+data/state/
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite-*
+
+# Runs (keep the demo run)
+runs/*
+!runs/demo/
+
+# Private notes and autopilot state (never published)
+_private/
+.autopilot/
+
+# Editors / OS
+.DS_Store
+.idea/
+*.swp
