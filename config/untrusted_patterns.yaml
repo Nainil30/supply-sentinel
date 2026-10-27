@@ -1,0 +1,8 @@
+# Patterns that mark supplier notes / EOL text as suspected prompt injection.
+# Flagging marks text, never removes it. Implemented in Phase 3 (mcp_server/untrusted.py).
+version: 1
+instruction_override: ['ignore (all )?(previous|prior) ', '\bdisregard\b', 'new instructions']
+role_claim: ['^\s*system\s*:', '^\s*assistant\s*:', 'you are now']
+action_coercion: ['call the tool', 'record_recommendation', 'set quantity']
+exfiltration: ['send (this )?to\b', 'https?://']
+hidden_text: ["[​‌‍⁠﻿]", '[A-Za-z0-9+/]{200,}={0,2}']

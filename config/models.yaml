@@ -1,0 +1,29 @@
+# Profiles. Model ids for `local` mirror config/models.local.yaml (what is installed here).
+profiles:
+  free-cloud:
+    status: retired   # GitHub Models was retired 2026-07-30; see docs/adr/0002
+    provider: openai
+    base_url: https://models.github.ai/inference
+    api_key_env: GITHUB_TOKEN
+    roles:
+      specialist: {model: "unavailable", temperature: 0.1}
+      extractor:  {model: "unavailable", temperature: 0}
+      writer:     {model: "unavailable", temperature: 0.3}
+      judge:      {model: "unavailable", temperature: 0}
+    limits: {rpm: 10, rpd: 50, concurrency: 2, max_input_tokens: 7000, max_output_tokens: 1500}
+  local:
+    provider: ollama
+    base_url: http://localhost:11434
+    roles:
+      specialist: {model: "qwen3:8b", temperature: 0.1}
+      extractor:  {model: "qwen3:8b", temperature: 0}
+      writer:     {model: "qwen3:8b", temperature: 0.3}
+      judge:      {model: "gemma4:e4b", temperature: 0}
+    limits: {concurrency: 1, max_input_tokens: 7000, max_output_tokens: 1500}
+  premium:       # optional, never required
+    provider: anthropic
+    api_key_env: ANTHROPIC_API_KEY
+    roles: {specialist: {model: "claude-sonnet-5-5"}, writer: {model: "claude-haiku-5-5"}}
+  replay:
+    cassette_dir: evals/cassettes
+price_table_usd_per_mtok: {}   # fill only for paid profiles; free profiles report $0

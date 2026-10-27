@@ -28,7 +28,10 @@ def main() -> None:
     if not path.exists() or shutil.which("uv") is None:
         return
 
-    for args in (["uv", "run", "ruff", "format", str(path)], ["uv", "run", "ruff", "check", "--fix", "--quiet", str(path)]):
+    for args in (
+        ["uv", "run", "ruff", "format", str(path)],
+        ["uv", "run", "ruff", "check", "--fix", "--quiet", str(path)],
+    ):
         try:
             subprocess.run(args, check=False, capture_output=True, timeout=60)
         except Exception:

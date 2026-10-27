@@ -1,0 +1,11 @@
+as_of_default: 2026-11-02
+staleness_days: 7
+max_exceptions_per_run: 12
+max_parallel_specialists: 2
+specialist_limits: {max_tool_calls: 8, max_idle_turns: 2, wall_seconds: 120}
+context_budget: {max_input_tokens: 7000, per_tool_result: 800, skill_body: 2000}
+allocation_priority: [SERVICE, NPI, SUSTAIN, EOL_ANNOUNCED]   # planner-editable
+ltb: {salvage_pct: 0.10, holding_rate: 0.20, cv_floor: 0.10, shortage_penalty_multiple: {default: 5, ASIC: 8}}
+eo: {min_excess_usd: 5000, safety_weeks: 2}
+untrusted_patterns_file: config/untrusted_patterns.yaml
+otel: {exporter: file}   # file | phoenix | none
