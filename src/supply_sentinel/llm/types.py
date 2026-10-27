@@ -11,6 +11,9 @@ class ToolCall(BaseModel):
     id: str = ""
     name: str
     args: dict[str, object] = Field(default_factory=dict)
+    # Provider fields echoed back verbatim on the next turn (Gemini's thought signature).
+    # Kept out of cassette keys so keys stay provider-neutral.
+    extra: dict[str, object] | None = None
 
 
 class Msg(BaseModel):

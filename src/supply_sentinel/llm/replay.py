@@ -20,7 +20,10 @@ def request_key(role: str, model: str, messages: list[Msg], tools: list[dict[str
     payload = {
         "role": role,
         "model": model,
-        "messages": [m.model_dump(exclude_defaults=True) for m in messages],
+        "messages": [
+            m.model_dump(exclude_defaults=True, exclude={"tool_calls": {"__all__": {"extra"}}})
+            for m in messages
+        ],
         "tools": tools,
     }
     blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)

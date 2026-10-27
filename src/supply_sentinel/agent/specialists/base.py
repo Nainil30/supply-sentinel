@@ -261,7 +261,7 @@ def _investigate(
             n = cand.usage.tool_calls + len(calls) + 1
             if n > max_calls:
                 break
-            calls.append(ToolCall(id=f"tc{n}", name=c.name, args=c.args))
+            calls.append(ToolCall(id=f"tc{n}", name=c.name, args=c.args, extra=c.extra))
         messages.append(Msg(role="assistant", content="", tool_calls=calls))
         for c in calls:
             cand.usage.tool_calls += 1

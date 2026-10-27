@@ -22,6 +22,7 @@ dependencies = [
   "opentelemetry-sdk>=1.30",
   "opentelemetry-exporter-otlp-proto-http>=1.30",
   "openinference-instrumentation-langchain>=0.1.40",
+  "openai>=3.39",
 ]
 
 [project.scripts]

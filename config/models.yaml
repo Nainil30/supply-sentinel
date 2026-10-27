@@ -1,16 +1,17 @@
 # Profiles. Model ids for `local` mirror config/models.local.yaml (what is installed here).
 profiles:
   free-cloud:
-    status: retired   # GitHub Models was retired 2026-07-30; see docs/adr/0002
+    # Gemini API free tier through its OpenAI-compatible endpoint (GitHub Models was retired 2026-07-30).
+    # Key: Google AI Studio, no billing; set GEMINI_API_KEY in .env. See docs/adr/0014.
     provider: openai
-    base_url: https://models.github.ai/inference
-    api_key_env: GITHUB_TOKEN
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    api_key_env: GEMINI_API_KEY
     roles:
-      specialist: {model: "unavailable", temperature: 0.1}
-      extractor:  {model: "unavailable", temperature: 0}
-      writer:     {model: "unavailable", temperature: 0.3}
-      judge:      {model: "unavailable", temperature: 0}
-    limits: {rpm: 10, rpd: 50, concurrency: 2, max_input_tokens: 7000, max_output_tokens: 1500}
+      specialist: {model: "gemini-3.5-flash", temperature: 0.1}
+      extractor:  {model: "gemini-3.5-flash", temperature: 0}
+      writer:     {model: "gemini-3.5-flash", temperature: 0.3}
+      judge:      {model: "gemini-3.5-flash-lite", temperature: 0}
+    limits: {rpm: 8, concurrency: 1, max_input_tokens: 7000, max_output_tokens: 1500}
   local:
     provider: ollama
     base_url: http://localhost:11434

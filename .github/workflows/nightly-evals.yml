@@ -8,7 +8,7 @@ jobs:
   safety:
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       SENTINEL_TODAY: "2026-11-02"
     steps:
       - uses: actions/checkout@v4
