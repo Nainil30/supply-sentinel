@@ -220,8 +220,35 @@ def _check_shape(con: duckdb.DuckDBPyConnection, report: ValidationReport) -> No
     report.add("shape", not problems, "; ".join(problems) or f"{n_parts} parts, {shared} shared")
 
 
-def validate_snapshot(con: duckdb.DuckDBPyConnection) -> ValidationReport:
-    """Run every check. The caller decides whether to raise (`report.raise_if_failed()`)."""
+NATURAL_EXCEPTIONS_RANGE = (2, 6)
+
+
+def _check_natural_exceptions(
+    con: duckdb.DuckDBPyConnection, report: ValidationReport, bounds: tuple[int, int]
+) -> None:
+    """The base snapshot should have a few, not zero and not a flood (spec 01 section 4)."""
+    from supply_sentinel.engine.config import load_config
+    from supply_sentinel.engine.exceptions import detect_exceptions
+    from supply_sentinel.engine.loader import load_part_inputs
+
+    found = detect_exceptions(load_part_inputs(con), load_config())
+    low, high = bounds
+    ids = ", ".join(e.exception_id for e in found)
+    report.add(
+        "natural_exceptions",
+        low <= len(found) <= high,
+        f"{len(found)} exceptions (need {low}-{high}): {ids}",
+    )
+
+
+def validate_snapshot(
+    con: duckdb.DuckDBPyConnection, natural_exceptions: tuple[int, int] | None = None
+) -> ValidationReport:
+    """Run every check. The caller decides whether to raise (`report.raise_if_failed()`).
+
+    Pass `natural_exceptions=(2, 6)` for the base snapshot; scenario snapshots inject their own
+    exceptions, so they skip that check.
+    """
     report = ValidationReport()
     _check_referential_integrity(con, report)
     _check_coverage(con, report)
@@ -229,5 +256,8 @@ def validate_snapshot(con: duckdb.DuckDBPyConnection) -> ValidationReport:
     _check_consistency(con, report)
     _check_anchors(con, report)
     _check_shape(con, report)
-    report.skip("natural_exceptions", "enabled in Phase 2, once the engine exists")
+    if natural_exceptions is None:
+        report.skip("natural_exceptions", "only the base snapshot is checked")
+    else:
+        _check_natural_exceptions(con, report, natural_exceptions)
     return report

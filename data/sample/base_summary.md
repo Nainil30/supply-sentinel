@@ -16,8 +16,8 @@ Fictional OEM *Orbis Networks*. As-of date 2026-11-02 (Monday, `week_idx` 0), se
 | demand_forecast | 568 |
 | service_demand | 52 |
 | inventory | 94 |
-| purchase_orders | 349 |
-| supplier_commits | 214 |
+| purchase_orders | 716 |
+| supplier_commits | 247 |
 | eol_notices | 1 |
 | forecast_accuracy | 18 |
 
@@ -36,12 +36,12 @@ Fictional OEM *Orbis Networks*. As-of date 2026-11-02 (Monday, `week_idx` 0), se
 
 | Weeks | Parts |
 |---|---:|
-| 0-3 | 3 |
-| 3-5 | 17 |
-| 5-7 | 8 |
-| 7-9 | 10 |
+| 0-3 | 4 |
+| 3-5 | 16 |
+| 5-7 | 9 |
+| 7-9 | 8 |
 | 9-12 | 4 |
-| 12+ | 0 |
+| 12+ | 1 |
 
 Median cover: 5.2 weeks across 42 parts.
 
@@ -60,9 +60,13 @@ Median cover: 5.2 weeks across 42 parts.
 
 | Status | POs | Slipped (promise > need) |
 |---|---:|---:|
-| OPEN | 339 | 56 |
-| PARTIAL | 10 | 1 |
+| OPEN | 706 | 98 |
+| PARTIAL | 10 | 2 |
 
 ## Natural exceptions
 
-Not computed yet: the exception engine arrives in Phase 2, which will list the 2-6 natural exceptions of the base snapshot here.
+| Exception | Severity |
+|---|---|
+| EXC-GAP-P-HSINK-L | P1 |
+| EXC-SHT-P-PHY-100G | P1 |
+| EXC-EXS-P-HSINK-S | P2 |

@@ -9,6 +9,8 @@ uv sync
 uv run sentinel datagen --seed 42 --summary data/sample/base_summary.md   # build data/snapshots/base.duckdb
 uv run sentinel datagen --check-determinism                              # build twice, compare table hashes
 uv run sentinel scenario build <id>                                      # apply evals/scenarios/<id>.yaml perturbations
+uv run sentinel detect                                                           # exceptions + rules-baseline action for a snapshot (no LLM)
+uv run python scripts/check_worked_examples.py                           # stdlib recompute of engine worked examples A-C
 uv run pytest -m "not live"
 ```
 

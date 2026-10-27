@@ -6,6 +6,8 @@ from typing import Annotated
 
 import typer
 
+from supply_sentinel.engine.models import ExceptionRecord
+
 app = typer.Typer(help="Supply Sentinel: supply-execution copilot.", no_args_is_help=True)
 
 
@@ -68,9 +70,49 @@ def scenario_build(
 
 
 @app.command()
-def detect() -> None:
-    """Run deterministic exception detection (no LLM)."""
-    _stub("detect", 2)
+def detect(
+    snapshot: Annotated[Path, typer.Option(help="Snapshot file to analyse.")] = Path(
+        "data/snapshots/base.duckdb"
+    ),
+    config_dir: Path = Path("config"),
+) -> None:
+    """Run deterministic exception detection with the rules baseline (no LLM)."""
+    from supply_sentinel.engine import loader, rules_baseline
+    from supply_sentinel.engine.config import load_config
+    from supply_sentinel.engine.exceptions import detect_exceptions
+
+    cfg = load_config(config_dir)
+    con = loader.open_snapshot(snapshot)
+    try:
+        parts = {p.part_id: p for p in loader.load_part_inputs(con)}
+    finally:
+        con.close()
+    found = detect_exceptions(list(parts.values()), cfg)
+    typer.echo(f"{snapshot.stem}: {len(found)} exception(s)")
+    rows = [("ID", "SEV", "DETAIL", "BASELINE ACTION")]
+    for i, exc in enumerate(found, start=1):
+        rec = rules_baseline.recommend(parts[exc.part_id], exc, cfg, seq=i)
+        act = rec.primary_action
+        qty = f" x {act.quantity:,.0f}" if act.quantity is not None else ""
+        rows.append((exc.exception_id, exc.severity.value, _detail(exc), f"{act.action_type}{qty}"))
+    widths = [max(len(r[c]) for r in rows) for c in range(4)]
+    for r in rows:
+        typer.echo("  ".join(cell.ljust(w) for cell, w in zip(r, widths, strict=True)).rstrip())
+
+
+def _detail(exc: ExceptionRecord) -> str:
+    if exc.type == "SHORTAGE":
+        return (
+            f"short {exc.max_shortfall_units:,.0f} from wk {exc.first_shortage_week}, "
+            f"${exc.revenue_at_risk_usd:,.0f} at risk"
+        )
+    if exc.type == "COMMIT_GAP":
+        return f"commits {exc.gap_units} below PO in weeks {exc.gap_weeks}"
+    if exc.type == "EOL_NOTICE":
+        return f"last-time-buy in {exc.days_to_ltb} days"
+    if exc.type == "EXCESS":
+        return f"excess {exc.excess_units:,.0f} units (${exc.excess_usd:,.0f})"
+    return f"obsolete {exc.obsolete_units:,.0f} units (${exc.obsolete_usd:,.0f})"
 
 
 @app.command()
