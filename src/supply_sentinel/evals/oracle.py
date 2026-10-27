@@ -15,7 +15,7 @@ from supply_sentinel.engine.config import EngineConfig
 from supply_sentinel.engine.eo import compute_eo_exposure
 from supply_sentinel.engine.ltb import compute_ltb_quantity
 from supply_sentinel.engine.models import PartInputs
-from supply_sentinel.engine.netting import commit_gaps, net_position
+from supply_sentinel.engine.netting import commit_gaps, net_position, round_to_order_multiple
 
 TOKEN = re.compile(r"\{(first_open_po|open_po|oracle):([^{}]+)\}")
 Scalar = float | int | str | None
@@ -53,6 +53,10 @@ def oracle_values(inp: PartInputs, cfg: EngineConfig) -> dict[str, Callable[[], 
         value = getattr(net_position(inp, cfg.horizon_weeks), name)
         return value if value is None else float(value) if name.endswith("units") else int(value)
 
+    def rounded_shortfall() -> Scalar:
+        short = net_position(inp, cfg.horizon_weeks).max_shortfall_units
+        return round_to_order_multiple(short, inp.order_multiple, inp.moq)
+
     def ltb_field(name: str) -> Scalar:
         return float(getattr(compute_ltb_quantity(inp, cfg).sizing, name))
 
@@ -63,6 +67,7 @@ def oracle_values(inp: PartInputs, cfg: EngineConfig) -> dict[str, Callable[[], 
         "shortage.max_shortfall_units": lambda: net_field("max_shortfall_units"),
         "shortage.first_shortage_week": lambda: net_field("first_shortage_week"),
         "shortage.recovery_week": lambda: net_field("recovery_week"),
+        "shortage.rounded_shortfall_units": rounded_shortfall,
         "shortage.slipped_po_id": slipped,
         "commit.gap_units": lambda: sum(gaps().values()),
         "commit.first_gap_week": lambda: min(gaps()) if gaps() else None,

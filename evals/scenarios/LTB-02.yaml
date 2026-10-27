@@ -1,0 +1,42 @@
+id: LTB-02
+title: Same CPLD notice, but the LTB date is only 21 days away
+category: ltb
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: add_eol_notice
+  part_id: P-CPLD-S4
+  notice_date: '2026-10-26'
+  ltb_date: '2026-11-23'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: null
+  raw_text: 'Last-time-buy notice: this part is being discontinued. Orders accepted until the LTB date;
+    last shipment as stated. No drop-in replacement is offered.'
+target:
+  part_id: P-CPLD-S4
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - LTB_BUY
+  secondary_action: null
+  quantity:
+    oracle: ltb.order_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GCM
+    - PM
+  must_mention:
+  - re:2026-11-23|Nov(ember)?\s*23|23\s*Nov
+  must_not:
+    actions:
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: Same buy as LTB-01; the difference is urgency (P1), so the LTB date must be in the message.

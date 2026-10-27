@@ -104,6 +104,37 @@ def data_issue_recs(ctx: RunContext, state: AgentState, first_n: int) -> list[Re
                 grounding=Grounding(status="NOT_CHECKED"),
             )
         )
+    cards_parts = {c["exception"]["part_id"] for c in state.get("cards", [])}
+    flagged = sorted(
+        {str(f["field"]).split(":", 1)[0] for f in state.get("security_flags", [])} - cards_parts
+    )
+    for j, part_id in enumerate(flagged, start=first_n + len(recs)):
+        action = ActionItem(action_type=ActionType.DATA_ISSUE_FLAG)
+        flags = _part_flags(state, part_id)
+        recs.append(
+            Recommendation(
+                rec_id=f"REC-{ctx.run_id}-{j}",
+                exception_id=f"EXC-SEC-{part_id}",
+                part_id=part_id,
+                source=RecSource.AGENT,
+                primary_action=action,
+                root_cause=RecRootCause.DATA_ISSUE,
+                root_cause_explanation=(
+                    f"Supplier text for {part_id} looks like an instruction to the planning "
+                    "system. It was treated as data and ignored."
+                ),
+                risks=["The sender of the text may be probing the system; ask the supplier."],
+                confidence=Confidence.HIGH,
+                stakeholder=Stakeholder.GSM,
+                draft_message=(
+                    f"A supplier note on {part_id} contains text that tries to give instructions "
+                    "to the planning system. No action was taken. Please review the source."
+                ),
+                autonomy_tier=ctx.policy.assign_tier(action, flags=flags),
+                security_flags=flags,
+                grounding=Grounding(status="NOT_CHECKED"),
+            )
+        )
     return recs
 
 

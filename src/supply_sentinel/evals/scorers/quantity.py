@@ -21,6 +21,8 @@ def expected_quantity(sc: ScoreContext) -> tuple[float, float] | None:
     else:
         raise ValueError("quantity rule needs oracle, exact or range")
     slack = abs(centre) * rule.tolerance_pct / 100.0
+    if rule.oracle is not None:
+        slack = max(slack, 1.0)  # agents quote whole units; the oracle is a float
     return centre - slack - 1e-6, centre + slack + 1e-6
 
 

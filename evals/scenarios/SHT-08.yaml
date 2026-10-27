@@ -1,0 +1,45 @@
+id: SHT-08
+title: Quality hold plus a PO slip; releasing the hold alone clears the gap
+category: shortage
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-SSD-240
+  location: CM_HUB
+  units: 1604
+- op: set_quality_hold
+  part_id: P-SSD-240
+  location: CM_HUB
+  units: 500
+- op: slip_po
+  po_id: '{open_po:P-SSD-240:0}'
+  weeks: 2
+target:
+  part_id: P-SSD-240
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - QUALITY_HOLD
+  primary_action:
+    any_of:
+    - REVIEW_QUALITY_HOLD
+  secondary_action:
+    any_of:
+    - PULL_IN_PO
+    optional: true
+  stakeholder:
+    any_of:
+    - QUALITY
+  must_mention:
+  - '500'
+  must_not:
+    actions:
+    - LTB_BUY
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+notes: 'Two causes, but the hold is the one that matters: with the hold released there is no shortage.
+  Chasing the slipped PO is optional.'

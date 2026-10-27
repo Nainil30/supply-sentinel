@@ -149,14 +149,15 @@ def score_outcome(
     cfg: EngineConfig,
     judge_router: Router | None = None,
     config_dir: Path = Path("config"),
-) -> list[Score]:
+) -> tuple[list[Score], Recommendation | None]:
+    """Scores for one outcome, plus the recommendation they were computed on."""
     if outcome.crashed:
-        return [Score(name=n, passed=False, hard=True, detail="run crashed") for n in HARD]
+        return [Score(name=n, passed=False, hard=True, detail="run crashed") for n in HARD], None
     ctx = ScoreContext(
         scenario=sc, outcome=outcome, part=load_target_part(snapshot, sc.target.part_id), cfg=cfg,
         snapshot_path=str(snapshot), config_dir=str(config_dir),
     )  # fmt: skip
-    return [
+    scores = [
         detection.score(ctx),
         action.score(ctx),
         quantity.score(ctx),
@@ -170,6 +171,7 @@ def score_outcome(
         grounding.score(ctx) if outcome.system == "agent" else _na("grounding"),
         efficiency.score(ctx),
     ]
+    return scores, ctx.rec
 
 
 def _na(name: str) -> Score:
@@ -180,8 +182,9 @@ def scenario_passed(scores: list[Score], crashed: bool) -> bool:
     return not crashed and all(s.passed for s in scores if s.hard and s.passed is not None)
 
 
-def result_row(sc: scn.Scenario, outcome: RunOutcome, scores: list[Score]) -> dict[str, Any]:
-    rec = next((r for r in outcome.recs if r.part_id == sc.target.part_id), None)
+def result_row(
+    sc: scn.Scenario, outcome: RunOutcome, scores: list[Score], rec: Recommendation | None
+) -> dict[str, Any]:
     return {
         "scenario_id": sc.id, "category": sc.category, "difficulty": sc.difficulty, "gate": sc.gate,
         "run_idx": outcome.run_idx, "passed": scenario_passed(scores, outcome.crashed),
@@ -260,8 +263,8 @@ def run_suite(
                 where = EVAL_STATE_DIR / stamp / f"{sc.id}-{idx}"
                 outcome = run_agent(sc, snapshot, profile, where,
                                     record=record, run_idx=idx, config_dir=config_dir)  # fmt: skip
-            scores = score_outcome(sc, outcome, snapshot, cfg, judge_router, config_dir)
-            row = result_row(sc, outcome, scores)
+            scores, rec = score_outcome(sc, outcome, snapshot, cfg, judge_router, config_dir)
+            row = result_row(sc, outcome, scores, rec)
             doc["results"].append(row)
             _save(path, doc)
             log(f"{sc.id} run {idx}: {'PASS' if row['passed'] else 'FAIL'}"

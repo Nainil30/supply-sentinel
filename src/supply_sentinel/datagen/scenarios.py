@@ -193,7 +193,12 @@ def add_eol_notice(
 
 @register("set_alternate_status")
 def set_alternate_status(
-    con: duckdb.DuckDBPyConnection, *, part_id: str, alt_part_id: str, status: str
+    con: duckdb.DuckDBPyConnection,
+    *,
+    part_id: str,
+    alt_part_id: str,
+    status: str,
+    qual_lead_time_weeks: int | None = None,
 ) -> None:
     if status not in ("QUALIFIED", "IN_QUAL", "NOT_STARTED"):
         raise ValueError(f"bad qualification status {status!r}")
@@ -207,6 +212,11 @@ def set_alternate_status(
         "UPDATE alternates SET qualification_status = ? WHERE part_id = ? AND alt_part_id = ?",
         [status, part_id, alt_part_id],
     )
+    if qual_lead_time_weeks is not None:
+        con.execute(
+            "UPDATE alternates SET qual_lead_time_weeks = ? WHERE part_id = ? AND alt_part_id = ?",
+            [qual_lead_time_weeks, part_id, alt_part_id],
+        )
 
 
 @register("set_platform_phase")
@@ -315,6 +325,47 @@ def add_po(
         [f"PO-S{n + 1:04d}", part_id, row[0], qty_units, need_week_idx, promise,
          cancel_window_weeks, row[1]],
     )  # fmt: skip
+
+
+@register("set_cancel_window")
+def set_cancel_window(con: duckdb.DuckDBPyConnection, *, part_id: str, weeks: int) -> None:
+    """Set the cancel window of every open PO of a part (a PO is cancellable if need > window)."""
+    _require(con, "purchase_orders", "part_id", part_id)
+    con.execute(
+        "UPDATE purchase_orders SET cancel_window_weeks = ? WHERE part_id = ?", [weeks, part_id]
+    )
+
+
+@register("add_alternate")
+def add_alternate(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    part_id: str,
+    alt_part_id: str,
+    qualification_status: str,
+    qual_lead_time_weeks: int,
+    notes: str = "",
+) -> None:
+    """Link an alternate part. If `alt_part_id` is new, it is created as a copy of `part_id`
+    (same supplier, cost and lead time) with zero stock and no BOM lines."""
+    if qualification_status not in ("QUALIFIED", "IN_QUAL", "NOT_STARTED"):
+        raise ValueError(f"bad qualification status {qualification_status!r}")
+    _require(con, "parts", "part_id", part_id)
+    if not _exists(con, "parts", "part_id", alt_part_id):
+        con.execute(
+            "INSERT INTO parts SELECT ?, 'Alternate for ' || part_id, commodity, supplier_id, "
+            "unit_cost_usd, lead_time_weeks, moq, order_multiple, 'ACTIVE', shelf_life_months "
+            "FROM parts WHERE part_id = ?",
+            [alt_part_id, part_id],
+        )
+        for loc in ("CM_HUB", "SERVICE_DEPOT"):
+            con.execute("INSERT INTO inventory VALUES (?, ?, 0, 0)", [alt_part_id, loc])
+    if _exists(con, "alternates", "alt_part_id", alt_part_id):
+        raise ValueError(f"{alt_part_id!r} is already an alternate of a part")
+    con.execute(
+        "INSERT INTO alternates VALUES (?, ?, ?, ?, ?)",
+        [part_id, alt_part_id, qualification_status, qual_lead_time_weeks, notes],
+    )
 
 
 @register("drop_rows")

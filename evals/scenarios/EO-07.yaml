@@ -1,0 +1,36 @@
+id: EO-07
+title: Open POs far above need with an unchanged forecast
+category: eo
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: add_po
+  part_id: P-FAN-80
+  qty_units: 40000
+  need_week_idx: 30
+  cancel_window_weeks: 4
+target:
+  part_id: P-FAN-80
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_OVERBUY
+  primary_action:
+    any_of:
+    - PUSH_OUT_PO
+    - CANCEL_PO
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - FINANCE
+  must_mention:
+  - P-FAN-80
+  must_not:
+    actions:
+    - LTB_BUY
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+notes: The forecast did not change, so this is an over-order, not a demand drop.

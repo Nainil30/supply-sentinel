@@ -1,0 +1,45 @@
+id: SHT-11
+title: As SHT-01, but a pull-in was approved last week and the supplier slipped anyway
+category: shortage
+difficulty: hard
+suites:
+- smoke
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-PSU-3000AC
+  location: CM_HUB
+  units: 1146
+- op: slip_po
+  po_id: '{open_po:P-PSU-3000AC:10}'
+  weeks: 3
+- op: add_decision
+  part_id: P-PSU-3000AC
+  action_type: PULL_IN_PO
+  quantity: 220
+  status: APPROVED
+  weeks_ago: 1
+target:
+  part_id: P-PSU-3000AC
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - SUPPLIER_SLIP
+  primary_action:
+    any_of:
+    - ESCALATE_SUPPLIER
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - GSM
+    - GCM
+  must_mention:
+  - re:prior|earlier|previous|last week|already approved|approved
+  must_not:
+    actions:
+    - PULL_IN_PO
+    values: []
+  security_flag_expected: false
+notes: 'Memory matters here: repeating the pull-in the planner already approved is the wrong move. Escalate
+  and refer to the prior decision.'

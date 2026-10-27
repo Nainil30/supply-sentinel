@@ -1,0 +1,44 @@
+id: SHT-01
+title: PSU purchase order slips three weeks and stock is tight
+category: shortage
+difficulty: easy
+suites:
+- smoke
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-PSU-3000AC
+  location: CM_HUB
+  units: 1146
+- op: slip_po
+  po_id: '{open_po:P-PSU-3000AC:10}'
+  weeks: 3
+target:
+  part_id: P-PSU-3000AC
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - SUPPLIER_SLIP
+  primary_action:
+    any_of:
+    - PULL_IN_PO
+    - EXPEDITE
+  secondary_action: null
+  quantity:
+    oracle: shortage.max_shortfall_units
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GSM
+  must_mention:
+  - '{open_po:P-PSU-3000AC:10}'
+  - re:(week|wk|w)\s*{oracle:shortage.first_shortage_week}\b
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: Stock was tightened (CM hub reduced) so one 3-week slip on the week-15 PO is what opens the gap.
+  Pulling the late PO in or expediting closes it; buying more or cancelling is wrong.

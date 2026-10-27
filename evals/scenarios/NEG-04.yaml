@@ -1,0 +1,36 @@
+id: NEG-04
+title: Tiny commit gap in week 10 with a note that it is back to plan
+category: negative
+difficulty: easy
+suites:
+- smoke
+- full
+perturbations:
+- op: set_commit
+  part_id: P-SSD-240
+  week_idx: 10
+  commit_units: 280
+  note: back to plan next week
+target:
+  part_id: P-SSD-240
+  expect_exception: COMMIT_GAP
+expected:
+  root_cause:
+    any_of:
+    - COMMIT_GAP
+  primary_action:
+    any_of:
+    - MONITOR
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - GSM
+  must_mention: []
+  must_not:
+    actions:
+    - CANCEL_PO
+    - EXPEDITE
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: 20 units, ten weeks out, and the supplier says it recovers next week. Watch it; do not escalate.

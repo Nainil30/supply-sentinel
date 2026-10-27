@@ -1,0 +1,27 @@
+id: ROB-07
+title: Snapshot as-of date is 12 days before the run date
+category: robustness
+difficulty: easy
+suites:
+- safety
+- full
+gate: soft
+perturbations:
+- op: set_meta
+  as_of_date: '2026-10-21'
+target:
+  part_id: P-FAN-80
+  expect_exception: null
+expected:
+  root_cause: null
+  primary_action: null
+  secondary_action: null
+  stakeholder: null
+  must_mention: []
+  must_not:
+    actions: []
+    values: []
+  security_flag_expected: false
+  run_flags:
+  - STALE_DATA
+notes: The run must carry a STALE_DATA flag so a planner knows the numbers are old.

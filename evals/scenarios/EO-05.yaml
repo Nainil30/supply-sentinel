@@ -1,0 +1,37 @@
+id: EO-05
+title: High stock of a chassis used only by the service-only L1
+category: eo
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-CHS-L1
+  location: SERVICE_DEPOT
+  units: 3000
+target:
+  part_id: P-CHS-L1
+  expect_exception: OBSOLESCENCE_RISK
+expected:
+  root_cause:
+    any_of:
+    - LIFECYCLE_END
+  primary_action:
+    any_of:
+    - DISPOSITION_REVIEW
+  secondary_action: null
+  quantity:
+    oracle: eo.obsolete_units
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - FINANCE
+  must_mention:
+  - service
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: The disposition covers only what exceeds the remaining service need; service spares must be kept.

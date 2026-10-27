@@ -1,0 +1,42 @@
+id: SHT-05
+title: Quarter-end +40% on L4 creates a shortage on a PSU shared with S4
+category: shortage
+difficulty: hard
+suites:
+- smoke
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-L4
+  from_week: 0
+  to_week: 12
+  pct: 40
+target:
+  part_id: P-PSU-2000AC
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - DEMAND_SPIKE
+  primary_action:
+    any_of:
+    - ALLOCATE
+  secondary_action:
+    any_of:
+    - EXPEDITE
+    optional: true
+  stakeholder:
+    any_of:
+    - PM
+    - GSM
+  must_mention:
+  - P-PSU-2000AC
+  - ORB-S4
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: L4 and S4 share the part, so the spike steals from S4. The planner allocates by priority, optionally
+  expediting too. The rules baseline expedites and never allocates.

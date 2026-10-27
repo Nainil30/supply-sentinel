@@ -1,0 +1,39 @@
+id: SHT-07
+title: 400 units of the boot SSD are on quality hold
+category: shortage
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-SSD-240
+  location: CM_HUB
+  units: 1504
+- op: set_quality_hold
+  part_id: P-SSD-240
+  location: CM_HUB
+  units: 400
+target:
+  part_id: P-SSD-240
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - QUALITY_HOLD
+  primary_action:
+    any_of:
+    - REVIEW_QUALITY_HOLD
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - QUALITY
+  must_mention:
+  - '400'
+  must_not:
+    actions:
+    - LTB_BUY
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+notes: Releasing the held stock clears the shortage entirely, so the action is a quality disposition decision,
+  not a buy.

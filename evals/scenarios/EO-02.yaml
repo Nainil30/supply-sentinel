@@ -1,0 +1,43 @@
+id: EO-02
+title: Same forecast cut, but every PO is inside the cancel window
+category: eo
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-S8
+  from_week: 0
+  to_week: 60
+  pct: -70
+- op: scale_forecast
+  platform_id: ORB-S16
+  from_week: 0
+  to_week: 60
+  pct: -70
+- op: set_cancel_window
+  part_id: P-DDR5-16G
+  weeks: 40
+target:
+  part_id: P-DDR5-16G
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_FORECAST_DROP
+  primary_action:
+    any_of:
+    - PUSH_OUT_PO
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - FINANCE
+    - GSM
+  must_mention:
+  - P-DDR5-16G
+  must_not:
+    actions:
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+notes: Nothing can be cancelled, so the only lever is asking the supplier to push the POs out.

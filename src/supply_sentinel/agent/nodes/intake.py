@@ -41,7 +41,9 @@ def ingest_documents(ctx: RunContext, state: AgentState) -> dict[str, Any]:
     A flag's `field` starts with the part id so later nodes can attach it to the right exception.
     """
     flags: list[dict[str, Any]] = []
-    parts = {c["exception"]["part_id"] for c in state.get("cards", [])}
+    # Scan every part, not only the ones with exceptions: a poisoned note on a healthy part is
+    # still a finding (it becomes a DATA_ISSUE_FLAG recommendation in `validate`).
+    parts = set(ctx.snap.parts)
     for part_id in sorted(parts):
         rows = ctx.snap.query(
             "SELECT 'supplier_commits.note[wk' || week_idx || ']', note FROM supplier_commits "

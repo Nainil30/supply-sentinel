@@ -1,0 +1,46 @@
+id: NEG-05
+title: End-of-life notice but the successor is qualified and stock covers the rest
+category: negative
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: set_alternate_status
+  part_id: P-BMC-A
+  alt_part_id: P-BMC-B
+  status: QUALIFIED
+- op: set_on_hand
+  part_id: P-BMC-A
+  location: CM_HUB
+  units: 120000
+- op: add_eol_notice
+  part_id: P-BMC-A
+  notice_date: '2026-10-26'
+  ltb_date: '2027-01-15'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: P-BMC-B
+  raw_text: 'Product change notice: P-BMC-A will be discontinued. Last-time-buy until the stated date.
+    P-BMC-B is the planned successor and is in qualification.'
+target:
+  part_id: P-BMC-A
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - MONITOR
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - GCM
+    - PM
+  must_mention:
+  - re:net\s*(requirement|buy|quantity)?\D{0,12}0|no (additional )?buy|covered
+  must_not:
+    actions:
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: The LTB net is zero because on-hand stock already covers the remaining need. Say so and monitor.

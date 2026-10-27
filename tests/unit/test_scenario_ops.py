@@ -31,11 +31,11 @@ def forecast(con, version):
     ]
 
 
-def test_registry_has_the_spec_ops_plus_three_eval_ops():
+def test_registry_has_the_spec_ops_plus_five_eval_ops():
     assert set(scenarios.OPS) == {
         "slip_po", "scale_forecast", "set_quality_hold", "set_commit", "add_eol_notice",
         "set_alternate_status", "set_platform_phase", "add_decision", "drop_rows",
-        "set_meta", "inject_text", "set_on_hand", "update_po", "add_po",
+        "set_meta", "inject_text", "set_on_hand", "update_po", "add_po", "set_cancel_window", "add_alternate",
     }  # fmt: skip
 
 
@@ -268,3 +268,30 @@ def test_add_po_uses_part_supplier_and_cost(con):
     ]
     with pytest.raises(ValueError, match="P-ZZZ"):
         scenarios.apply_op(con, "add_po", {"part_id": "P-ZZZ", "qty_units": 1, "need_week_idx": 1})
+
+
+def test_set_cancel_window_applies_to_every_po_of_the_part(con):
+    scenarios.apply_op(con, "set_cancel_window", {"part_id": "P-A", "weeks": 20})
+    assert fetch(con, "SELECT cancel_window_weeks FROM purchase_orders") == [(20,)]
+    with pytest.raises(ValueError, match="P-ZZZ"):
+        scenarios.apply_op(con, "set_cancel_window", {"part_id": "P-ZZZ", "weeks": 1})
+
+
+def test_add_alternate_clones_a_new_alternate_part(con):
+    params = {
+        "part_id": "P-A", "alt_part_id": "P-A-ALT", "qualification_status": "NOT_STARTED",
+        "qual_lead_time_weeks": 26,
+    }  # fmt: skip
+    scenarios.apply_op(con, "add_alternate", params)
+    new = "SELECT part_id, qualification_status, qual_lead_time_weeks FROM alternates"
+    assert fetch(con, new + " WHERE alt_part_id = 'P-A-ALT'") == [("P-A", "NOT_STARTED", 26)]
+    assert fetch(con, "SELECT unit_cost_usd FROM parts WHERE part_id = 'P-A-ALT'") == [(10.0,)]
+    assert fetch(con, "SELECT SUM(on_hand_units) FROM inventory WHERE part_id = 'P-A-ALT'") == [
+        (0,)
+    ]
+    with pytest.raises(ValueError, match="already an alternate"):
+        scenarios.apply_op(con, "add_alternate", params)
+    with pytest.raises(ValueError, match="bad qualification"):
+        scenarios.apply_op(
+            con, "add_alternate", {**params, "alt_part_id": "X", "qualification_status": "?"}
+        )

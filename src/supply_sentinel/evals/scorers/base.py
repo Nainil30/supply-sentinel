@@ -34,8 +34,12 @@ class ScoreContext:
         want = self.scenario.target.expect_exception
         if want:
             code = TYPE_CODES[ExceptionType(want)]
+            matching = [r for r in recs if f"-{code}-" in r.exception_id]
+            recs = matching or recs
+        accepted = self.scenario.expected.primary_action
+        if accepted is not None:  # a part can carry several recs; judge the one that fits best
             for r in recs:
-                if f"-{code}-" in r.exception_id:
+                if r.primary_action.action_type.value in accepted.any_of:
                     return r
         return recs[0] if recs else None
 

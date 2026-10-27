@@ -1,0 +1,40 @@
+id: SHT-06
+title: S16 ramp +80% leaves the CPU short across S16, S8 and S4
+category: shortage
+difficulty: hard
+suites:
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-S16
+  from_week: 4
+  to_week: 14
+  pct: 80
+target:
+  part_id: P-CPU-8C
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - DEMAND_SPIKE
+  primary_action:
+    any_of:
+    - ALLOCATE
+  secondary_action:
+    any_of:
+    - EXPEDITE
+    optional: true
+  stakeholder:
+    any_of:
+    - PM
+    - GSM
+  must_mention:
+  - ORB-S16
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: Three platforms share the part and the NPI platform is surging. Allocation in priority order (NPI
+  before sustaining before ending) is the planner move.

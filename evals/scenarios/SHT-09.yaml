@@ -1,0 +1,46 @@
+id: SHT-09
+title: DDR5 commit gap in weeks 3-5 with an allocation warning, no shortage yet
+category: shortage
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: set_commit
+  part_id: P-DDR5-16G
+  week_idx: 3
+  commit_units: 150
+  note: allocation tight Q1
+- op: set_commit
+  part_id: P-DDR5-16G
+  week_idx: 4
+  commit_units: 200
+  note: allocation tight Q1
+- op: set_commit
+  part_id: P-DDR5-16G
+  week_idx: 5
+  commit_units: 200
+  note: allocation tight Q1
+target:
+  part_id: P-DDR5-16G
+  expect_exception: COMMIT_GAP
+expected:
+  root_cause:
+    any_of:
+    - COMMIT_GAP
+  primary_action:
+    any_of:
+    - ESCALATE_SUPPLIER
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - GCM
+  must_mention:
+  - P-DDR5-16G
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: No shortage yet, but an allocation warning on a memory part is a commodity-level conversation,
+  so it goes to the GCM.
