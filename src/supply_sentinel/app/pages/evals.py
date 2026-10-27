@@ -5,7 +5,9 @@ import streamlit as st
 
 from supply_sentinel.app.components import common
 
-svc = common.page_header("Evals", "Read from evals/results. Every number comes from a results file.")
+svc = common.page_header(
+    "Evals", "Read from evals/results. Every number comes from a results file."
+)
 files = svc.eval_files()
 if not files:
     st.info("No results yet. Run `sentinel eval --suite smoke --profile replay`.")

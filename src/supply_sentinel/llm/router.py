@@ -88,7 +88,9 @@ class Router:
                     if tracing.capturing():
                         sp.set_attribute(
                             tracing.INPUT_MESSAGES,
-                            tracing.as_text([m.model_dump(exclude_defaults=True) for m in messages]),
+                            tracing.as_text(
+                                [m.model_dump(exclude_defaults=True) for m in messages]
+                            ),
                         )
                         sp.set_attribute(tracing.OUTPUT_MESSAGES, tracing.as_text(resp.content))
                 latency = time.monotonic() - t0

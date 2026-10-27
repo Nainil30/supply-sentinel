@@ -24,7 +24,8 @@ def test_ui_launches_streamlit_with_options_in_env(monkeypatch, tmp_path):
 
     monkeypatch.setattr("subprocess.call", fake_call)
     result = CliRunner().invoke(
-        app, ["ui", "--snapshot", "SHT-01", "--state-dir", str(tmp_path), "--port", "8600", "--hosted"]
+        app,
+        ["ui", "--snapshot", "SHT-01", "--state-dir", str(tmp_path), "--port", "8600", "--hosted"],
     )
     assert result.exit_code == 0
     assert seen["cmd"][1:4] == ["-m", "streamlit", "run"]

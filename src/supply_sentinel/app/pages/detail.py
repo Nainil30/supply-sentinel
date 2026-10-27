@@ -108,7 +108,9 @@ for rec in recs:
             st.write("**Risks**")
             for risk in rec.risks:
                 st.write(f"- {risk}")
-        st.write(f"**Confidence:** {rec.confidence.value}. **Stakeholder:** {rec.stakeholder.value}")
+        st.write(
+            f"**Confidence:** {rec.confidence.value}. **Stakeholder:** {rec.stakeholder.value}"
+        )
         st.caption("Draft message (copy with the icon at the top right)")
         st.code(rec.draft_message, language=None, wrap_lines=True)
 
@@ -127,7 +129,9 @@ for rec in recs:
                 for msg in check.warnings:
                     st.warning(f"Sanity check: {msg} A reason is required to approve this edit.")
                 if not check.errors and not check.warnings:
-                    st.success("Edited quantity passes validation. Approve it on the Approvals page.")
+                    st.success(
+                        "Edited quantity passes validation. Approve it on the Approvals page."
+                    )
 
 if run_id is not None:
     with st.expander("Trace"):

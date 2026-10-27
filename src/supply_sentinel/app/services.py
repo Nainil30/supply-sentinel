@@ -117,7 +117,7 @@ class Services:
 
     @classmethod
     def from_env(cls) -> "Services":
-        """`sentinel ui` passes its options as environment variables (Streamlit reruns the script)."""
+        """`sentinel ui` passes its options as environment variables (Streamlit reruns scripts)."""
         env = os.environ
         return cls(
             state_dir=Path(env.get("SENTINEL_STATE_DIR", str(DEFAULT_STATE_DIR))),
@@ -216,7 +216,9 @@ class Services:
         if exception_id is None:
             return rows
         keep = {
-            r["span_id"] for r in rows if r["attributes"].get("sentinel.exception_id") == exception_id
+            r["span_id"]
+            for r in rows
+            if r["attributes"].get("sentinel.exception_id") == exception_id
         }
         return [r for r in rows if r["span_id"] in keep]
 
@@ -260,7 +262,7 @@ class Services:
 
     def check_edit(self, rec: Recommendation, run_id: str, quantity: float) -> Checked:
         """Re-validate an edited quantity before it can be staged."""
-        from supply_sentinel.agent.models import ExceptionCard, RecommendationDraft
+        from supply_sentinel.agent.models import RecommendationDraft
 
         out = Checked()
         action = rec.primary_action
@@ -276,7 +278,9 @@ class Services:
         fields = set(RecommendationDraft.model_fields)
         draft = RecommendationDraft(**rec.model_dump(include=fields))
         draft.primary_action = draft.primary_action.model_copy(update={"quantity": quantity})
-        out.warnings = [i.message for i in check_sanity(draft, card, self.tool_log(run_id, rec.exception_id))]
+        out.warnings = [
+            i.message for i in check_sanity(draft, card, self.tool_log(run_id, rec.exception_id))
+        ]
         return out
 
     def _card(self, exception_id: str) -> Any:
@@ -336,7 +340,9 @@ class Services:
         final = runner.resume(self.state_dir, run_id)
         return list(final.get("outcomes", []))
 
-    def decisions_log(self, status: str | None = None, part: str | None = None) -> list[dict[str, Any]]:
+    def decisions_log(
+        self, status: str | None = None, part: str | None = None
+    ) -> list[dict[str, Any]]:
         conn = sqlite3.connect(self.snap.state_db)
         conn.row_factory = sqlite3.Row
         try:
@@ -368,7 +374,8 @@ class Services:
             rec = recs.get(e.exception_id)
             rows.append(
                 ExceptionRow(
-                    exception_id=e.exception_id, type=e.type, severity=e.severity, part_id=e.part_id,
+                    exception_id=e.exception_id, type=e.type, severity=e.severity,
+                    part_id=e.part_id,
                     platforms=e.platforms, weeks_to_impact=e.weeks_to_impact,
                     impact_usd=self._impact(e), baseline_action=e.baseline_action,
                     agent_action=rec.primary_action.action_type.value if rec else "-",
@@ -398,16 +405,19 @@ class Services:
             or self._rec_status(r.rec_id, run_id).startswith("STAGED")
         ]  # fmt: skip
         ltb = [
-            self.spend_usd(r) or 0.0 for r in pending_recs
+            self.spend_usd(r) or 0.0
+            for r in pending_recs
             if r.primary_action.action_type.value in LTB_ACTIONS
         ]
         by_type = Counter(r.type for r in rows)
         shortage_rev = [
-            e.revenue_at_risk_usd or 0.0 for e in tools.list_exceptions(snap).exceptions
+            e.revenue_at_risk_usd or 0.0
+            for e in tools.list_exceptions(snap).exceptions
             if e.type == ExceptionType.SHORTAGE.value
         ]
         eo = [
-            e.exposure_usd or 0.0 for e in tools.list_exceptions(snap).exceptions
+            e.exposure_usd or 0.0
+            for e in tools.list_exceptions(snap).exceptions
             if e.type in (ExceptionType.EXCESS.value, ExceptionType.OBSOLESCENCE_RISK.value)
         ]
         return Overview(
@@ -467,7 +477,9 @@ class Services:
     def eval_failures(self, doc: dict[str, Any]) -> list[dict[str, Any]]:
         return [
             {"scenario": r["scenario_id"], "run": r["run_idx"], "error": r.get("error") or "",
-             "failed": ", ".join(n for n, x in r["scores"].items() if x["hard"] and x["passed"] is False),
+             "failed": ", ".join(
+                 n for n, x in r["scores"].items() if x["hard"] and x["passed"] is False
+             ),
              "ledger": r.get("ledger") or ""}
             for r in doc["results"] if not r["passed"]
         ]  # fmt: skip

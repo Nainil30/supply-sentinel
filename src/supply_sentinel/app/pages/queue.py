@@ -5,7 +5,9 @@ import streamlit as st
 
 from supply_sentinel.app.components import common
 
-svc = common.page_header("Exception queue", "Click a column header to sort. Select a row to open it.")
+svc = common.page_header(
+    "Exception queue", "Click a column header to sort. Select a row to open it."
+)
 run_id = svc.current_run_id()
 rows = svc.exceptions(run_id)
 

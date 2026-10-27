@@ -130,8 +130,10 @@ def init_tracing(settings: dict[str, Any]) -> bool:
     _S.capture = capture_content(settings)
     if kind == "none":
         return False
-    provider = TracerProvider(resource=Resource.create({"service.name": PROJECT_NAME,
-                                                        "openinference.project.name": PROJECT_NAME}))  # fmt: skip
+    resource = Resource.create(
+        {"service.name": PROJECT_NAME, "openinference.project.name": PROJECT_NAME}
+    )
+    provider = TracerProvider(resource=resource)
     exporter = RoutingFileExporter()
     provider.add_span_processor(SimpleSpanProcessor(exporter))
     if kind == "phoenix":

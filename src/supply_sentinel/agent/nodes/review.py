@@ -162,6 +162,9 @@ def validate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
                 NodeError(node="specialist", exception_id=cand.exception_id, message=reason)
             )
             recs.append(_fallback(ctx, card, reason, rec_id, flags))
+            ctx.ledger.log(
+                "validation", rec_id=rec_id, checks={"status": "no_draft", "reason": reason[:200]}
+            )
             continue
         res, _ = _validated(ctx, card, cand)
         assert res is not None and cand.draft is not None
@@ -172,6 +175,9 @@ def validate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
                 NodeError(node="validate", exception_id=cand.exception_id, message=reason)
             )
             recs.append(_fallback(ctx, card, reason, rec_id, flags))
+            ctx.ledger.log(
+                "validation", rec_id=rec_id, checks={"status": "failed", "reason": reason[:200]}
+            )
             continue
         d = cand.draft
         sanity = [

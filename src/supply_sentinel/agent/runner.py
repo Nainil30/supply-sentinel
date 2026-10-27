@@ -5,8 +5,8 @@ import os
 import secrets
 import sqlite3
 import time
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -235,7 +235,9 @@ def resume(state_dir: Path, run_id: str, client: ChatClient | None = None) -> di
             for p in pending(h)
         ]
         with tracing.run_span(run_id, run_dir(state_dir, run_id), "resume"):
-            h.ctx.ledger.log("run_resume", trace_id=tracing.current_trace_id(), decisions=len(answer))
+            h.ctx.ledger.log(
+                "run_resume", trace_id=tracing.current_trace_id(), decisions=len(answer)
+            )
             h.graph.invoke(Command(resume=answer), h.config)
         tracing.flush()
         return dict(h.graph.get_state(h.config).values)
