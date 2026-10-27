@@ -20,6 +20,7 @@ from supply_sentinel.agent.runtime import RunContext
 from supply_sentinel.agent.skills_loader import SkillError
 from supply_sentinel.engine.models import SecurityFlag
 from supply_sentinel.llm.types import LLMResponse, Msg, ProviderError, ToolCall
+from supply_sentinel.observability import tracing
 
 RULES = """You are the {name} specialist for Orbis Networks, a fictional data center networking OEM.
 Rules you never break:
@@ -265,7 +266,16 @@ def _investigate(
         for c in calls:
             cand.usage.tool_calls += 1
             ctx.charge("tool")
-            out = _run_tool(ctx, c, allowed)
+            t_tool = time.monotonic()
+            with tracing.span(
+                f"execute_tool {c.name}",
+                **{tracing.OPERATION: "execute_tool", tracing.TOOL_NAME: c.name,
+                   tracing.TOOL_CALL_ID: c.id, "sentinel.exception_id": card.exception_id},
+            ) as sp:  # fmt: skip
+                out = _run_tool(ctx, c, allowed)
+                if tracing.capturing():
+                    sp.set_attribute(tracing.TOOL_ARGS, tracing.as_text(c.args))
+                    sp.set_attribute(tracing.TOOL_RESULT, tracing.as_text(out))
             cand.tool_log[c.id] = out
             cand.security_flags.extend(_flags_from(c.name, c.args, out))
             ctx.ledger.log(
@@ -274,6 +284,8 @@ def _investigate(
                 tool=c.name,
                 args=c.args,
                 id=c.id,
+                output=out,
+                latency_ms=round((time.monotonic() - t_tool) * 1000),
                 error=out.get("error") if isinstance(out, dict) else None,
             )
             text = context.compact_result(out)

@@ -8,6 +8,7 @@ from typing import Any
 
 from supply_sentinel.llm.replay import CassetteMiss
 from supply_sentinel.llm.types import ChatClient, LLMResponse, Msg, ProviderError, Role
+from supply_sentinel.observability import tracing
 from supply_sentinel.observability.ledger import Ledger
 
 
@@ -48,12 +49,14 @@ class Router:
         limits: dict[str, Any] | None = None,
         ledger: Ledger | None = None,
         max_retries: int = 3,
+        provider: str = "",
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         limits = limits or {}
         self.client = client
         self.ledger = ledger or Ledger(None)
         self.max_retries = max_retries
+        self.provider_name = provider
         self._sleep = sleep
         self._bucket = TokenBucket(limits.get("rpm"), sleep=sleep)
         self._sem = threading.Semaphore(int(limits.get("concurrency", 2)))
@@ -73,20 +76,38 @@ class Router:
         for attempt in range(self.max_retries + 1):
             self._bucket.acquire()
             try:
-                with self._sem:
+                with self._sem, tracing.span(
+                    f"chat {self.model_id(role)}",
+                    **{tracing.OPERATION: "chat", tracing.REQUEST_MODEL: self.model_id(role),
+                       tracing.PROVIDER: self.provider_name, "sentinel.tag": tag},
+                ) as sp:  # fmt: skip
                     t0 = time.monotonic()
                     resp = self.client.complete(role, messages, tools)
+                    sp.set_attribute(tracing.INPUT_TOKENS, resp.input_tokens)
+                    sp.set_attribute(tracing.OUTPUT_TOKENS, resp.output_tokens)
+                    if tracing.capturing():
+                        sp.set_attribute(
+                            tracing.INPUT_MESSAGES,
+                            tracing.as_text(
+                                [m.model_dump(exclude_defaults=True) for m in messages]
+                            ),
+                        )
+                        sp.set_attribute(tracing.OUTPUT_MESSAGES, tracing.as_text(resp.content))
+                latency = time.monotonic() - t0
                 self.ledger.log(
                     "llm_call",
                     tag=tag,
                     role=role,
+                    provider=self.provider_name,
                     model=resp.model or self.model_id(role),
                     est_input_tokens=est_input_tokens,
                     input_tokens=resp.input_tokens,
                     output_tokens=resp.output_tokens,
                     tool_calls=[c.name for c in resp.tool_calls],
                     cached=resp.cached,
-                    seconds=round(time.monotonic() - t0, 2),
+                    seconds=round(latency, 2),
+                    latency_ms=round(latency * 1000),
+                    status="ok",
                 )
                 return resp
             except CassetteMiss:

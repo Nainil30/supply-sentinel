@@ -15,9 +15,24 @@ def test_help_lists_all_commands() -> None:
         assert name in result.output
 
 
-def test_stub_exits_nonzero() -> None:
-    result = CliRunner().invoke(app, ["ui"])
-    assert result.exit_code == 1
+def test_ui_launches_streamlit_with_options_in_env(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_call(cmd, env):
+        seen["cmd"], seen["env"] = cmd, env
+        return 0
+
+    monkeypatch.setattr("subprocess.call", fake_call)
+    result = CliRunner().invoke(
+        app,
+        ["ui", "--snapshot", "SHT-01", "--state-dir", str(tmp_path), "--port", "8600", "--hosted"],
+    )
+    assert result.exit_code == 0
+    assert seen["cmd"][1:4] == ["-m", "streamlit", "run"]
+    assert seen["cmd"][4].endswith("streamlit_app.py") and "8600" in seen["cmd"]
+    assert seen["env"]["SENTINEL_DB"].endswith("SHT-01.duckdb")
+    assert seen["env"]["SENTINEL_STATE_DIR"] == str(tmp_path)
+    assert seen["env"]["SENTINEL_HOSTED"] == "1" and seen["env"]["SENTINEL_UI_PROFILE"] == "replay"
 
 
 def test_datagen_and_scenario_build_end_to_end(tmp_path):

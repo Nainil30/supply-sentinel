@@ -17,6 +17,7 @@ from supply_sentinel.agent.nodes import brief, intake, reconcile, review
 from supply_sentinel.agent.runtime import RunContext
 from supply_sentinel.agent.specialists import eo, ltb, shortage
 from supply_sentinel.agent.state import AgentState
+from supply_sentinel.observability import tracing
 
 
 def _bind(fn: Callable[[RunContext, AgentState], dict[str, Any]], ctx: RunContext) -> Any:
@@ -32,7 +33,14 @@ def build_graph(ctx: RunContext, checkpointer: BaseCheckpointSaver[Any]) -> Any:
 
     def specialist(investigate: Callable[[RunContext, ExceptionCard], Any]) -> Any:
         def node(payload: dict[str, Any]) -> dict[str, Any]:
-            cand = investigate(ctx, ExceptionCard(**payload["card"]))
+            card = ExceptionCard(**payload["card"])
+            name = investigate.__module__.rsplit(".", 1)[-1] + "_specialist"
+            with tracing.span(
+                f"invoke_agent {name}",
+                **{tracing.OPERATION: "invoke_agent", tracing.AGENT_NAME: name,
+                   "sentinel.exception_id": card.exception_id, "sentinel.part_id": card.part_id},
+            ):  # fmt: skip
+                cand = investigate(ctx, card)
             return {"candidates": [cand.model_dump(mode="json")]}
 
         return node
