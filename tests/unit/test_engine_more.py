@@ -390,3 +390,9 @@ def test_every_baseline_message_is_short_and_labeled():
             rec = rules_baseline.recommend(inp, exc, CFG)
             assert rec.source.value == "RULES_BASELINE"
             assert len(rec.draft_message.split()) <= 150
+
+
+def test_moving_a_short_committed_po_does_not_create_supply():
+    inp = example_a(commits={5: 40, 7: 0})  # supplier committed only 40 of the 120 due in week 5
+    moved = netting.move_po_receipt(inp, "PO-A1", 7)
+    assert moved.commits == {5: 0, 7: 40}

@@ -79,11 +79,14 @@ def move_po_receipt(inp: PartInputs, po_id: str, new_week: int) -> PartInputs:
     out = inp.model_copy(deep=True)
     po = next(p for p in out.pos if p.po_id == po_id)
     old = max(0, po.promise_week_idx)
+    moved = po.qty_units
     if old in out.commits:
-        out.commits[old] = max(0, out.commits[old] - po.qty_units)
+        # move only what the supplier actually committed; a commit cut stays a commit cut
+        moved = min(po.qty_units, out.commits[old])
+        out.commits[old] -= moved
     po.promise_week_idx = new_week
     if new_week in out.commits:
-        out.commits[new_week] += po.qty_units
+        out.commits[new_week] += moved
     return out
 
 

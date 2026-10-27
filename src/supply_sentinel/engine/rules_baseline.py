@@ -73,7 +73,7 @@ def _decide(
                 evidence,
             )
         if rc.primary is RootCause.COMMIT_GAP:
-            gaps = commit_gaps(inp, cfg.horizon_weeks)
+            gaps = commit_gaps(inp, cfg.commit_gap_weeks)
             action = ActionItem(
                 action_type=ActionType.ESCALATE_SUPPLIER, quantity=sum(gaps.values())
             )

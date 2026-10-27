@@ -41,7 +41,7 @@ def production_series(
     for start, kind, units in rows:
         if kind == "WEEK":
             w = week_idx(start, as_of)
-            if 0 <= w < n_weeks:
+            if 0 <= w < n_weeks and start <= last_ship:
                 out[w] += units
             continue
         end = _next_month_start(start)
