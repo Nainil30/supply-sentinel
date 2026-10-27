@@ -143,13 +143,20 @@ class LiveClient:
         )
 
     def complete(
-        self, role: Role, messages: list[Msg], tools: list[dict[str, object]]
+        self,
+        role: Role,
+        messages: list[Msg],
+        tools: list[dict[str, object]],
+        json_schema: dict[str, object] | None = None,
     ) -> LLMResponse:
         if self.profile.provider == "openai":
             return self._complete_openai(role, messages, tools)
         model = self._model(role)
         if tools:
             model = model.bind_tools(tools)
+        elif json_schema:
+            # Ollama constrains decoding to the schema, so the reply is always parseable JSON.
+            model = model.bind(format=json_schema)
         ai = model.invoke(_to_lc(messages))
         usage = getattr(ai, "usage_metadata", None) or {}
         content = ai.content if isinstance(ai.content, str) else str(ai.content)

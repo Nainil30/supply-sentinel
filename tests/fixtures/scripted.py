@@ -16,7 +16,11 @@ class ScriptedClient:
         return "scripted"
 
     def complete(
-        self, role: Role, messages: list[Msg], tools: list[dict[str, object]]
+        self,
+        role: Role,
+        messages: list[Msg],
+        tools: list[dict[str, object]],
+        json_schema: dict[str, object] | None = None,
     ) -> LLMResponse:
         self.calls.append((role, [m.model_copy(deep=True) for m in messages], tools))
         resp = self.responder(role, messages, tools)

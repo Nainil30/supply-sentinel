@@ -39,7 +39,11 @@ class ProviderError(RuntimeError):
 
 class ChatClient(Protocol):
     def complete(
-        self, role: Role, messages: list[Msg], tools: list[dict[str, object]]
+        self,
+        role: Role,
+        messages: list[Msg],
+        tools: list[dict[str, object]],
+        json_schema: dict[str, object] | None = None,
     ) -> LLMResponse: ...
 
     def model_id(self, role: Role) -> str: ...
