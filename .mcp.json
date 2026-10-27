@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "supply-sentinel": {
+      "command": "uv",
+      "args": ["run", "sentinel", "serve-mcp", "--transport", "stdio"],
+      "env": { "SENTINEL_DB": "data/snapshots/base.duckdb", "SENTINEL_STATE_DIR": "data/state" }
+    }
+  }
+}

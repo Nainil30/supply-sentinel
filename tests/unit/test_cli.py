@@ -48,3 +48,8 @@ def test_datagen_and_scenario_build_end_to_end(tmp_path):
 def test_scenario_build_reports_missing_file(tmp_path):
     result = CliRunner().invoke(app, ["scenario", "build", "nope", "--scenario-dir", str(tmp_path)])
     assert result.exit_code != 0
+
+
+def test_serve_mcp_rejects_unknown_transport():
+    result = CliRunner().invoke(app, ["serve-mcp", "--transport", "carrier-pigeon"])
+    assert result.exit_code != 0

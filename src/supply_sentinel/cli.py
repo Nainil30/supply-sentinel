@@ -152,9 +152,17 @@ def eval_(suite: str = "smoke", profile: str = "replay") -> None:
 
 
 @app.command(name="serve-mcp")
-def serve_mcp(transport: str = "stdio") -> None:
-    """Serve the planning engine over MCP."""
-    _stub("serve-mcp", 3)
+def serve_mcp(
+    transport: Annotated[str, typer.Option(help="stdio or http.")] = "stdio",
+    port: int = 8765,
+    host: str = "127.0.0.1",
+) -> None:
+    """Serve the planning engine over MCP (reads SENTINEL_DB and SENTINEL_STATE_DIR)."""
+    from supply_sentinel.mcp_server.server import serve
+
+    if transport not in ("stdio", "http"):
+        raise typer.BadParameter("transport must be 'stdio' or 'http'")
+    serve(transport, host=host, port=port)
 
 
 @app.command()

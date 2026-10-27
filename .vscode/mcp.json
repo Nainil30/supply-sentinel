@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "supply-sentinel": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "sentinel", "serve-mcp", "--transport", "stdio"],
+      "env": {
+        "SENTINEL_DB": "${workspaceFolder}/data/snapshots/base.duckdb",
+        "SENTINEL_STATE_DIR": "${workspaceFolder}/data/state"
+      }
+    }
+  }
+}
