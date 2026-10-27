@@ -19,11 +19,12 @@ profiles:
       extractor:  {model: "qwen3:8b", temperature: 0}
       writer:     {model: "qwen3:8b", temperature: 0.3}
       judge:      {model: "gemma4:e4b", temperature: 0}
-    limits: {concurrency: 1, max_input_tokens: 7000, max_output_tokens: 1500}
+    limits: {concurrency: 1, max_input_tokens: 7000, max_output_tokens: 1500, specialist_wall_seconds: 900}
   premium:       # optional, never required
     provider: anthropic
     api_key_env: ANTHROPIC_API_KEY
     roles: {specialist: {model: "claude-sonnet-5-5"}, writer: {model: "claude-haiku-5-5"}}
   replay:
+    source_profile: local   # replay the responses recorded with this profile
     cassette_dir: evals/cassettes
 price_table_usd_per_mtok: {}   # fill only for paid profiles; free profiles report $0
