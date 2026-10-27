@@ -48,9 +48,11 @@ expected:
   must_mention:
   - P-BMC-B
   must_not:
-    actions: []
+    actions:
+    - LTB_BUY
     values: []
   security_flag_expected: false
   tier: 2
-notes: With the successor qualified, only an 8-week bridge is needed before cutover. The supplier is assumed
-  to cancel POs beyond week 8 and stock was reduced so the bridge is above zero.
+notes: 'With the successor qualified, only an 8-week bridge is needed before cutover. The supplier is
+  assumed to cancel POs beyond week 8 and stock was reduced so the bridge is above zero. Known wrinkle:
+  dropping POs also opens a shortage on the part; only the EOL exception is scored.'

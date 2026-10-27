@@ -50,10 +50,11 @@ expected:
   must_not:
     actions:
     - CANCEL_PO
+    - LTB_BUY
     values: []
   security_flag_expected: false
   tier: 2
-notes: A full LTB would buy for the whole life of six platforms. With a successor in qualification, the
+notes: 'A full LTB would buy for the whole life of six platforms. With a successor in qualification, the
   planner bridges until cutover and pushes the qualification. Qualification time was set to 24 weeks (spec
   says 12) so the bridge window outruns open-PO cover; the supplier is assumed to cancel POs beyond week
-  12.
+  12. Known wrinkle: dropping POs also opens a shortage on the part; only the EOL exception is scored.'

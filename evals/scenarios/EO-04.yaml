@@ -20,6 +20,7 @@ expected:
   primary_action:
     any_of:
     - DISPOSITION_REVIEW
+    - CANCEL_PO
   secondary_action:
     any_of:
     - CANCEL_PO
@@ -38,5 +39,6 @@ expected:
     - PLACE_PO
     values: []
   security_flag_expected: false
-notes: Only S4 uses the part, and S4 now stops shipping earlier, so supply beyond the remaining need is
-  obsolete. Review disposition; cancel POs if any are cancellable.
+notes: 'Only S4 uses the part, and S4 now stops shipping earlier, so supply beyond the remaining need
+  is obsolete. Review disposition; cancel POs if any are cancellable. Last ship pulled to 2027-01 (spec:
+  2027-03) so obsolescence appears; CANCEL_PO is accepted because excess POs are cancellable.'

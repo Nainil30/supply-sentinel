@@ -40,5 +40,5 @@ expected:
     - LTB_BUY
     values: []
   security_flag_expected: false
-notes: Stock was tightened (CM hub reduced) so one 3-week slip on the week-15 PO is what opens the gap.
-  Pulling the late PO in or expediting closes it; buying more or cancelling is wrong.
+notes: Stock was tightened (CM hub reduced) so one 3-week slip on the late PO is what opens the gap. Pulling
+  the late PO in or expediting closes it; buying more or cancelling is wrong.

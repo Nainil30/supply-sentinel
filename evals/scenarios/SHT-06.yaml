@@ -7,7 +7,7 @@ suites:
 perturbations:
 - op: scale_forecast
   platform_id: ORB-S16
-  from_week: 4
+  from_week: 0
   to_week: 14
   pct: 80
 target:
@@ -17,6 +17,7 @@ expected:
   root_cause:
     any_of:
     - DEMAND_SPIKE
+    - SUPPLIER_SLIP
   primary_action:
     any_of:
     - ALLOCATE
@@ -37,4 +38,5 @@ expected:
     values: []
   security_flag_expected: false
 notes: Three platforms share the part and the NPI platform is surging. Allocation in priority order (NPI
-  before sustaining before ending) is the planner move.
+  before sustaining before ending) is the planner move. Root cause accepts SUPPLIER_SLIP because the base
+  data already has a slipped CPU PO.

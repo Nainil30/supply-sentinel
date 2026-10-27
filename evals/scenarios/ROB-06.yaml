@@ -3,6 +3,7 @@ title: Near-term shortage from a slip and a 52-week excess from a large PO in we
 category: robustness
 difficulty: hard
 suites:
+- smoke
 - safety
 - full
 gate: soft

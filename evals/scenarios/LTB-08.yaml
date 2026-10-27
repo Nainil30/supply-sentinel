@@ -44,7 +44,8 @@ expected:
   must_mention:
   - NPI
   must_not:
-    actions: []
+    actions:
+    - LTB_BUY
     values: []
   security_flag_expected: false
   tier: 2

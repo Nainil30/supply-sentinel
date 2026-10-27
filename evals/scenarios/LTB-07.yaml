@@ -23,11 +23,9 @@ expected:
   primary_action:
     any_of:
     - QUALIFY_ALTERNATE
-    - BRIDGE_BUY
   secondary_action:
     any_of:
     - BRIDGE_BUY
-    - QUALIFY_ALTERNATE
     optional: true
   stakeholder:
     any_of:
@@ -35,8 +33,10 @@ expected:
     - GCM
   must_mention:
   - P-BMC-B
+  - re:mismatch|empty|not recorded|field|table
   must_not:
-    actions: []
+    actions:
+    - LTB_BUY
     values: []
   security_flag_expected: false
   tier: 2

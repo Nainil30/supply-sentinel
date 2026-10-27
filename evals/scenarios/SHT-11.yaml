@@ -16,7 +16,7 @@ perturbations:
 - op: add_decision
   part_id: P-PSU-3000AC
   action_type: PULL_IN_PO
-  quantity: 220
+  quantity: 150
   status: APPROVED
   weeks_ago: 1
 target:
@@ -35,7 +35,7 @@ expected:
     - GSM
     - GCM
   must_mention:
-  - re:prior|earlier|previous|last week|already approved|approved
+  - re:prior|earlier|previous|last week|already approved
   must_not:
     actions:
     - PULL_IN_PO

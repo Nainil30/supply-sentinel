@@ -44,6 +44,7 @@ from supply_sentinel.evals.scorers import (
 from supply_sentinel.evals.scorers.base import ScoreContext
 from supply_sentinel.llm.factory import build_router
 from supply_sentinel.llm.router import Router
+from supply_sentinel.llm.types import ChatClient
 from supply_sentinel.observability.ledger import Ledger
 
 RESULTS_DIR = Path("evals/results")
@@ -103,11 +104,13 @@ def run_agent(
     record: bool = False,
     run_idx: int = 0,
     config_dir: Path = Path("config"),
+    state_db: Path = STATE_DB,
+    client: ChatClient | None = None,
 ) -> RunOutcome:
     """Run the graph to the approval gate and capture what it proposes."""
     state_dir.mkdir(parents=True, exist_ok=True)
-    if STATE_DB.exists():  # decision history for the memory scenarios, isolated per run
-        shutil.copyfile(STATE_DB, state_dir / "decisions.sqlite")
+    if state_db.exists():  # decision history for the memory scenarios, isolated per run
+        shutil.copyfile(state_db, state_dir / "decisions.sqlite")
     run_id = agent_runner.new_run_id()
     outcome = RunOutcome(scenario_id=sc.id, system="agent", profile=profile, run_idx=run_idx)
     outcome.ledger_path = str(agent_runner.run_dir(state_dir, run_id) / "ledger.jsonl")
@@ -116,7 +119,7 @@ def run_agent(
     try:
         h = agent_runner.open_run(
             run_id, snapshot, profile, state_dir, cassette=sc.id, record=record,
-            config_dir=config_dir,
+            config_dir=config_dir, client=client,
             settings_override={"eval_mode": True, "only_parts": [sc.target.part_id]},
         )  # fmt: skip
         h.graph.invoke({"run_id": run_id}, h.config)
@@ -228,6 +231,10 @@ def run_suite(
     results_dir: Path = RESULTS_DIR,
     config_dir: Path = Path("config"),
     log: Any = print,
+    snapshot_dir: Path = scn.SNAPSHOT_DIR,
+    state_db: Path = STATE_DB,
+    state_root: Path = EVAL_STATE_DIR,
+    client: ChatClient | None = None,
 ) -> Path:
     """Run every scenario k times (once for the deterministic rules system); return the file."""
     if system not in SYSTEMS:
@@ -253,16 +260,17 @@ def run_suite(
                                        config_dir=config_dir)  # fmt: skip
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S")
     for sc in scenarios:
-        snapshot = scn.build_snapshot(sc)
+        snapshot = scn.build_snapshot(sc, snapshot_dir, state_db)
         for idx in range(k):
             if (sc.id, idx) in done:
                 continue
             if system == "rules":
                 outcome = run_rules(sc, snapshot, cfg, idx)
             else:
-                where = EVAL_STATE_DIR / stamp / f"{sc.id}-{idx}"
+                where = state_root / stamp / f"{sc.id}-{idx}"
                 outcome = run_agent(sc, snapshot, profile, where,
-                                    record=record, run_idx=idx, config_dir=config_dir)  # fmt: skip
+                                    record=record, run_idx=idx, config_dir=config_dir,
+                                    state_db=state_db, client=client)  # fmt: skip
             scores, rec = score_outcome(sc, outcome, snapshot, cfg, judge_router, config_dir)
             row = result_row(sc, outcome, scores, rec)
             doc["results"].append(row)

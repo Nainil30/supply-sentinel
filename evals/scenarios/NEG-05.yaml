@@ -43,4 +43,6 @@ expected:
     - LTB_BUY
     values: []
   security_flag_expected: false
-notes: The LTB net is zero because on-hand stock already covers the remaining need. Say so and monitor.
+notes: 'The LTB net is zero because on-hand stock already covers the remaining need. Say so and monitor.
+  Known wrinkle: the large on-hand also raises an EXCESS exception on the part; only the EOL exception
+  is scored here.'
