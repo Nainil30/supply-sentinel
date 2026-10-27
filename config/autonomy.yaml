@@ -1,0 +1,31 @@
+version: 1
+tiers:
+  0: {label: auto_record, approval: none}
+  1: {label: approve, approval: single}
+  2: {label: approve_with_reason, approval: single_with_reason}
+action_tiers:
+  MONITOR: 0
+  DATA_ISSUE_FLAG: 0
+  ESCALATE_SUPPLIER: 1
+  PULL_IN_PO: 1
+  PUSH_OUT_PO: 1
+  PLACE_PO: 1
+  REVIEW_QUALITY_HOLD: 1
+  QUALIFY_ALTERNATE: 1
+  EXPEDITE: 2
+  ALLOCATE: 2
+  LTB_BUY: 2
+  BRIDGE_BUY: 2
+  CANCEL_PO: 2
+  DISPOSITION_REVIEW: 2
+escalation_rules:
+  second_approver_over_usd: 50000
+  security_flag_min_tier: 1
+  grounding_failed_min_tier: 2
+  conflict_min_tier: 2
+allowed_actions:
+  SHORTAGE: [PLACE_PO, EXPEDITE, PULL_IN_PO, ALLOCATE, ESCALATE_SUPPLIER, QUALIFY_ALTERNATE, REVIEW_QUALITY_HOLD, MONITOR, DATA_ISSUE_FLAG]
+  COMMIT_GAP: [ESCALATE_SUPPLIER, PULL_IN_PO, MONITOR, DATA_ISSUE_FLAG]
+  EOL_NOTICE: [LTB_BUY, BRIDGE_BUY, QUALIFY_ALTERNATE, MONITOR, DATA_ISSUE_FLAG]
+  EXCESS: [CANCEL_PO, PUSH_OUT_PO, DISPOSITION_REVIEW, MONITOR, DATA_ISSUE_FLAG]
+  OBSOLESCENCE_RISK: [DISPOSITION_REVIEW, CANCEL_PO, PUSH_OUT_PO, MONITOR, DATA_ISSUE_FLAG]
