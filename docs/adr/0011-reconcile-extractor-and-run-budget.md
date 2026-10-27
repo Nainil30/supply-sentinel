@@ -24,4 +24,4 @@ Spec 04 names a reconcile node, an extractor in `ingest_documents` and budget fa
 
 ## Consequences
 
-The limits (80 LLM, 160 tool, 1800 s) are first guesses for the free tier; Phase 8 should tune them from ledgers. A run with more than two recommendations on one part is flagged, not merged.
+The limits (80 LLM, 160 tool, 7200 s) are first guesses (the wall limit is high because CPU-only local models need about 30 minutes for three exceptions); Phase 8 should tune them from ledgers. A run with more than two recommendations on one part is flagged, not merged.

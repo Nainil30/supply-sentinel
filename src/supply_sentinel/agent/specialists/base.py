@@ -46,6 +46,8 @@ risks: up to 3 strings
 confidence: LOW | MEDIUM | HIGH
 stakeholder: GSM | GCM | PM | FINANCE | QUALITY
 draft_message: string, under 150 words, numbers only from evidence
+Shape example (angle brackets are placeholders; nest exactly like this, evidence is a LIST):
+{"primary_action": {"action_type": "<ACTION>", "quantity": <number>, "po_ids": ["<PO id>"], "target_week_idx": <int>}, "secondary_action": null, "root_cause": "<ENUM>", "root_cause_explanation": "<text>", "baseline_agreement": "AGREE", "evidence": [{"tool_call_id": "tc1", "field_path": "<path>", "value": <number>}], "alternatives_considered": [], "risks": [], "confidence": "MEDIUM", "stakeholder": "GSM", "draft_message": "<text>"}
 action_type is one of: PLACE_PO, EXPEDITE, PULL_IN_PO, ALLOCATE, ESCALATE_SUPPLIER, QUALIFY_ALTERNATE, REVIEW_QUALITY_HOLD, LTB_BUY, BRIDGE_BUY, PUSH_OUT_PO, CANCEL_PO, DISPOSITION_REVIEW, MONITOR, DATA_ISSUE_FLAG."""
 
 THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
