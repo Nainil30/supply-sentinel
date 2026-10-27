@@ -36,7 +36,8 @@ SAMPLE_SUMMARY = Path("data/sample/base_summary.md")
 S_HISTORY, S_ACCURACY, S_FORECAST, S_INVENTORY, S_PO, S_COMMIT, S_DECISION = range(1, 8)
 
 ACCURACY_LAGS = (1, 4, 13)
-PREVIOUS_FORECAST_FACTOR = {"ORB-S16": 0.97, "ORB-S4": 1.03, "ORB-M1": 0.99}
+NPI_MAPE_BY_LAG = (0.25, 0.30, 0.40)  # new products are forecast badly
+PREVIOUS_FORECAST_FACTOR = {"ORB-S16": 0.97, "ORB-S4": 1.03, "ORB-M1": 0.99}  # others unchanged
 CANCEL_WINDOW_FRACTION = {"HIGH": 0.70, "MEDIUM": 0.50, "LOW": 0.35}
 SLIP_RATE = 0.15  # average share of POs promised later than needed
 
@@ -123,7 +124,8 @@ def _load_history_and_forecast(
         factor = PREVIOUS_FORECAST_FACTOR.get(p.platform_id, 1.0)
         for start, kind, fc_units in forecast_buckets(p):
             fc_rows.append((p.platform_id, start, kind, fc_units, current))
-            prev_units = round(fc_units * factor * float(rng.uniform(0.99, 1.01)), 2)
+            jitter = float(rng.uniform(0.99, 1.01)) if factor != 1.0 else 1.0
+            prev_units = round(fc_units * factor * jitter, 2)
             fc_rows.append((p.platform_id, start, kind, prev_units, previous))
     _insert(con, "demand_forecast", fc_rows)
 
@@ -146,12 +148,19 @@ def _load_forecast_accuracy(
     rows = []
     for p in PLATFORMS:
         recent = [(t, a) for t, a in production[p.platform_id] if t >= -52 and a > 0]
-        if len(recent) < 4:
+        if len(recent) < 26:
+            if recent:  # NPI: too little history to measure, so use a designed profile
+                mean_fc = sum(forecast_level(p, t) for t in range(26)) / 26
+                for lag, mape in zip(ACCURACY_LAGS, NPI_MAPE_BY_LAG, strict=True):
+                    rows.append((
+                        p.platform_id, lag, mape, round(p.forecast_bias - 1, 4),
+                        round(0.30 * mean_fc, 2),
+                    ))  # fmt: skip
             continue
         for lag in ACCURACY_LAGS:
             errs, apes, actuals = [], [], []
             for t, actual in recent:
-                f = forecast_level(p, t) * float(rng.lognormal(0, 0.03 * math.sqrt(lag)))
+                f = forecast_level(p, t) * float(rng.lognormal(0, 0.05 * math.sqrt(lag)))
                 errs.append(f - actual)
                 apes.append(abs(f - actual) / actual)
                 actuals.append(actual)
@@ -223,7 +232,6 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
         while k * avg12 < spec.moq and k < 8:
             k *= 2
         supplier = suppliers[spec.supplier_id]
-        slip_rate = SLIP_RATE * (1 - supplier[4]) / mean_miss
         window = round(CANCEL_WINDOW_FRACTION[supplier[5]] * spec.lead_time_weeks)
         need = start
         while need <= max(spec.lead_time_weeks, start):
@@ -231,15 +239,22 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
             if demand > 0:
                 mult = spec.order_multiple
                 qty = max(spec.moq, math.ceil(demand / mult) * mult)
-                slip = 0
-                if rng.random() < slip_rate:
-                    slip = int(rng.choice([1, 2, 3], p=[0.5, 0.3, 0.2]))
                 partial = need <= 2 and rng.random() < 0.3
                 raw.append((
-                    spec.part_id, spec.supplier_id, qty, need, need + slip,
+                    spec.part_id, spec.supplier_id, qty, need, need,
                     "PARTIAL" if partial else "OPEN", window, spec.unit_cost_usd,
                 ))  # fmt: skip
             need += k
+
+    # Stratified slips: each supplier gets exactly its share of late POs (worse OTD, more slips)
+    by_supplier: dict[str, list[int]] = defaultdict(list)
+    for i, row in enumerate(raw):
+        by_supplier[row[1]].append(i)
+    for sup, idxs in sorted(by_supplier.items()):
+        n_slip = round(len(idxs) * SLIP_RATE * (1 - suppliers[sup][4]) / mean_miss)
+        for i in sorted(int(x) for x in rng.choice(idxs, size=n_slip, replace=False)):
+            slip = int(rng.choice([1, 2, 3], p=[0.5, 0.3, 0.2]))
+            raw[i] = (*raw[i][:4], raw[i][4] + slip, *raw[i][5:])
 
     po_rows = [(f"PO-{10001 + i}", *row) for i, row in enumerate(raw)]
     _insert(con, "purchase_orders", po_rows)

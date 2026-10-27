@@ -36,7 +36,7 @@ PLATFORMS: list[Platform] = [
     Platform("ORB-L4", "Leaf, 48x100G + 8x400G, 12.8T ASIC", "SUSTAIN", date(2023, 5, 1),
              date(2029, 12, 31), date(2034, 12, 31), 24000, 0.18, 1.00, 3.0),
     Platform("ORB-L1", "Leaf, 48x25G + 8x100G, 3.2T ASIC", "EOL", date(2019, 4, 1),
-             date(2026, 6, 30), date(2031, 6, 30), 11000, 0.0, 1.00, 3.0),
+             date(2026, 6, 30), date(2031, 6, 30), 11000, 0.15, 1.00, 3.0),
     Platform("ORB-M1", "Management switch, 48x1G + 4x10G", "SUSTAIN", date(2022, 1, 1),
              date(2030, 6, 30), date(2035, 6, 30), 4500, 0.12, 1.00, 2.0),
 ]  # fmt: skip
@@ -127,6 +127,7 @@ PARTS: list[PartSpec] = [
     _p("P-PHY-100G", "100G PHY", "PHY", "SUP-09", 38, 18, 100, 100),
     _p("P-PHY-1G", "1G Ethernet PHY", "PHY", "SUP-09", 6.5, 14, 250, 250),
     _p("P-CAGE-OSFP", "OSFP cage", "CAGE", "SUP-07", 18, 12, 100, 100),
+    _p("P-CAGE-QSFP28", "QSFP28 cage", "CAGE", "SUP-07", 9, 10, 100, 100),
     _p("P-CAGE-QSFPDD", "QSFP-DD cage", "CAGE", "SUP-07", 14, 12, 100, 100),
     _p("P-CAGE-SFP", "SFP/SFP+ cage", "CAGE", "SUP-07", 3.2, 10, 500, 500),
     _p("P-CAGE-RJ45", "RJ45 jack", "CAGE", "SUP-07", 2.4, 10, 500, 500),
@@ -167,13 +168,13 @@ BOM: dict[str, list[tuple[str, int]]] = {
     "ORB-L4": [
         ("P-CPU-4C", 1), ("P-BMC-A", 1), ("P-PSU-2000AC", 2), ("P-FAN-40", 4),
         ("P-DDR4-8G", 1), ("P-CLK-J1", 1), ("P-SSD-240", 1), ("P-PCBA-L4", 1),
-        ("P-ASIC-12T", 1), ("P-CAGE-QSFPDD", 8), ("P-CAGE-SFP", 48), ("P-CHS-1U", 1),
+        ("P-ASIC-12T", 1), ("P-CAGE-QSFPDD", 8), ("P-CAGE-QSFP28", 48), ("P-CHS-1U", 1),
         ("P-HSINK-S", 1), ("P-PHY-100G", 6),
     ],
     "ORB-L1": [
         ("P-CPU-4C", 1), ("P-BMC-A", 1), ("P-PSU-650AC", 1), ("P-FAN-40", 3),
         ("P-DDR4-8G", 1), ("P-PCBA-L1", 1), ("P-ASIC-3T", 1), ("P-CAGE-SFP", 48),
-        ("P-CHS-L1", 1), ("P-HSINK-S", 1), ("P-PHY-100G", 6), ("P-EMMC-8G", 1),
+        ("P-CHS-L1", 1), ("P-HSINK-S", 1), ("P-CAGE-QSFP28", 8), ("P-EMMC-8G", 1),
         ("P-CLK-J2", 1), ("P-RTC-BATT", 1),
     ],
     "ORB-M1": [
@@ -194,9 +195,9 @@ ALTERNATES: list[tuple[str, str, str, int, str]] = [
 
 # Parts that start the base snapshot with tight cover (weeks); scenarios build on these.
 TIGHT_COVERAGE_WEEKS: dict[str, float] = {
-    "P-ASIC-102T": 3.0,
-    "P-RTM-224G": 3.2,
-    "P-DDR5-16G": 3.5,
+    "P-ASIC-102T": 1.5,
+    "P-RTM-224G": 2.0,
+    "P-DDR5-16G": 2.0,
 }
 
 # Annual spares growth until the last-ship year, then decline.

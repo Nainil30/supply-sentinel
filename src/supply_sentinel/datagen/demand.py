@@ -75,7 +75,9 @@ def mean_level(p: Platform, t: int) -> float:
         return 120.0 * lift * _taper(t, t_last)
     if pid == "ORB-M1":
         return 60.0 * _taper(t, t_last)
-    return 0.0  # ORB-L1: service only
+    if pid == "ORB-L1":  # production stopped at last ship; only history exists
+        return 25.0 * _taper(t, t_last)
+    return 0.0
 
 
 def forecast_level(p: Platform, t: int) -> float:

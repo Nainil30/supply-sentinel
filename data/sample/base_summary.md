@@ -9,17 +9,17 @@ Fictional OEM *Orbis Networks*. As-of date 2026-11-02 (Monday, `week_idx` 0), se
 | meta | 1 |
 | platforms | 6 |
 | suppliers | 12 |
-| parts | 46 |
+| parts | 47 |
 | bom | 84 |
 | alternates | 3 |
-| shipments_history | 954 |
+| shipments_history | 1041 |
 | demand_forecast | 568 |
 | service_demand | 52 |
-| inventory | 92 |
-| purchase_orders | 339 |
-| supplier_commits | 197 |
+| inventory | 94 |
+| purchase_orders | 349 |
+| supplier_commits | 214 |
 | eol_notices | 1 |
-| forecast_accuracy | 15 |
+| forecast_accuracy | 18 |
 
 ## Platforms
 
@@ -36,31 +36,32 @@ Fictional OEM *Orbis Networks*. As-of date 2026-11-02 (Monday, `week_idx` 0), se
 
 | Weeks | Parts |
 |---|---:|
-| 0-3 | 1 |
+| 0-3 | 3 |
 | 3-5 | 17 |
-| 5-7 | 9 |
-| 7-9 | 9 |
-| 9-12 | 5 |
+| 5-7 | 8 |
+| 7-9 | 10 |
+| 9-12 | 4 |
 | 12+ | 0 |
 
-Median cover: 5.3 weeks across 41 parts.
+Median cover: 5.2 weeks across 42 parts.
 
 ## Forecast accuracy (lag 4 weeks)
 
 | Platform | MAPE | Bias | Sigma (units) |
 |---|---:|---:|---:|
-| ORB-L4 | 14.3% | -4.0% | 22.0 |
-| ORB-M1 | 10.9% | -1.4% | 8.9 |
-| ORB-S16 | 10.6% | -6.4% | 0.4 |
-| ORB-S4 | 14.7% | +2.1% | 7.7 |
-| ORB-S8 | 16.3% | +7.2% | 12.1 |
+| ORB-L1 | 12.1% | +2.8% | 3.5 |
+| ORB-L4 | 16.2% | -5.5% | 24.8 |
+| ORB-M1 | 12.4% | -2.5% | 9.8 |
+| ORB-S16 | 30.0% | +0.0% | 9.8 |
+| ORB-S4 | 16.7% | +2.5% | 8.6 |
+| ORB-S8 | 17.4% | +8.3% | 13.3 |
 
 ## Open purchase orders
 
 | Status | POs | Slipped (promise > need) |
 |---|---:|---:|
-| OPEN | 328 | 68 |
-| PARTIAL | 11 | 3 |
+| OPEN | 339 | 56 |
+| PARTIAL | 10 | 1 |
 
 ## Natural exceptions
 

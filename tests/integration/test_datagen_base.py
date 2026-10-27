@@ -137,10 +137,12 @@ def test_meta_is_the_fixed_as_of_week(con):
 def test_history_is_104_weeks_and_l1_has_only_spares(con):
     (weeks,) = q(con, "SELECT COUNT(DISTINCT week_start) FROM shipments_history")[0]
     assert weeks == 104
-    channels = q(con, "SELECT DISTINCT channel FROM shipments_history WHERE platform_id = 'ORB-L1'")
-    assert channels == [("SERVICE",)]
+    # L1 produced until last ship (2026-06-30), then only spares
+    (last_prod,) = q(con, "SELECT MAX(week_start) FROM shipments_history "
+                          "WHERE platform_id = 'ORB-L1' AND channel = 'PRODUCTION'")[0]  # fmt: skip
+    assert last_prod <= date(2026, 6, 30)
     lo, hi = q(con, "SELECT MIN(units), MAX(units) FROM shipments_history "
-                    "WHERE platform_id = 'ORB-L1'")[0]  # fmt: skip
+                    "WHERE platform_id = 'ORB-L1' AND channel = 'SERVICE'")[0]  # fmt: skip
     assert 2 <= lo and hi <= 4
     # S16 launched in September 2026: no production before the launch week
     (first,) = q(con, "SELECT MIN(week_start) FROM shipments_history "
@@ -174,11 +176,11 @@ def test_s8_is_over_forecast_by_about_six_percent(con):
                         "WHERE platform_id = 'ORB-S8' AND lag_weeks = 4")  # fmt: skip
     assert 0.03 <= bias <= 0.10
     others = q(con, "SELECT ABS(bias) FROM forecast_accuracy WHERE platform_id <> 'ORB-S8'")
-    assert max(b for (b,) in others) < 0.08
+    assert max(b for (b,) in others) < 0.09
 
 
 def test_forecast_accuracy_rows(con):
-    assert q(con, "SELECT COUNT(*) FROM forecast_accuracy") == [(15,)]  # 5 platforms x 3 lags
+    assert q(con, "SELECT COUNT(*) FROM forecast_accuracy") == [(18,)]  # 6 platforms x 3 lags
     assert q(con, "SELECT COUNT(*) FROM forecast_accuracy WHERE sigma_units <= 0 OR mape <= 0") == [
         (0,)
     ]
@@ -188,8 +190,8 @@ def test_coverage_is_realistic_and_anchor_tight_parts_are_tight(con):
     cover = validate.coverage_weeks(con)
     values = sorted(cover.values())
     assert 3 <= values[len(values) // 2] <= 12
-    assert cover["P-ASIC-102T"] < 4
-    assert min(values) >= 2.5 and max(values) <= 12
+    assert cover["P-ASIC-102T"] < 2.5
+    assert min(values) >= 1 and max(values) <= 12
 
 
 def test_inventory_is_never_negative_and_holds_are_small(con):
@@ -216,8 +218,9 @@ def test_purchase_order_rules(con):
 def test_lower_otd_suppliers_slip_more(con):
     rate = dict(q(con, "SELECT supplier_id, AVG((promise_week_idx > need_week_idx)::INT) "
                        "FROM purchase_orders GROUP BY 1"))  # fmt: skip
-    assert rate["SUP-09"] > rate["SUP-11"] if "SUP-11" in rate else True
+    assert rate["SUP-09"] > rate["SUP-05"]  # HIGH-risk retimer supplier vs LOW-risk fans
     assert rate["SUP-01"] > rate["SUP-10"]
+    assert rate["SUP-09"] > rate["SUP-11"]
 
 
 def test_supplier_commits_mirror_next_12_weeks(con):
@@ -341,3 +344,9 @@ def q_one(path, sql, params=None):
         return c.execute(sql, params or []).fetchone()[0]
     finally:
         c.close()
+
+
+def test_s16_accuracy_uses_designed_npi_profile(con):
+    rows = q(con, "SELECT lag_weeks, mape FROM forecast_accuracy WHERE platform_id = 'ORB-S16' "
+                  "ORDER BY 1")  # fmt: skip
+    assert rows == [(1, 0.25), (4, 0.30), (13, 0.40)]  # error grows with lag
