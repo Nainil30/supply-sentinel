@@ -71,6 +71,7 @@ class Router:
         tools: list[dict[str, object]],
         tag: str = "",
         est_input_tokens: int = 0,
+        json_schema: dict[str, object] | None = None,
     ) -> LLMResponse:
         last_exc: Exception | None = None
         for attempt in range(self.max_retries + 1):
@@ -82,7 +83,7 @@ class Router:
                        tracing.PROVIDER: self.provider_name, "sentinel.tag": tag},
                 ) as sp:  # fmt: skip
                     t0 = time.monotonic()
-                    resp = self.client.complete(role, messages, tools)
+                    resp = self.client.complete(role, messages, tools, json_schema)
                     sp.set_attribute(tracing.INPUT_TOKENS, resp.input_tokens)
                     sp.set_attribute(tracing.OUTPUT_TOKENS, resp.output_tokens)
                     if tracing.capturing():

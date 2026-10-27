@@ -51,6 +51,11 @@ Shape example (angle brackets are placeholders; nest exactly like this, evidence
 {"primary_action": {"action_type": "<ACTION>", "quantity": <number>, "po_ids": ["<PO id>"], "target_week_idx": <int>}, "secondary_action": null, "root_cause": "<ENUM>", "root_cause_explanation": "<text>", "baseline_agreement": "AGREE", "evidence": [{"tool_call_id": "tc1", "field_path": "<path>", "value": <number>}], "alternatives_considered": [], "risks": [], "confidence": "MEDIUM", "stakeholder": "GSM", "draft_message": "<text>"}
 action_type is one of: PLACE_PO, EXPEDITE, PULL_IN_PO, ALLOCATE, ESCALATE_SUPPLIER, QUALIFY_ALTERNATE, REVIEW_QUALITY_HOLD, LTB_BUY, BRIDGE_BUY, PUSH_OUT_PO, CANCEL_PO, DISPOSITION_REVIEW, MONITOR, DATA_ISSUE_FLAG."""
 
+# Structured-output schema for the final turn (providers that support it constrain decoding to it).
+DRAFT_SCHEMA: dict[str, object] = RecommendationDraft.model_json_schema()
+# The final and repair calls may run this much past the investigation wall limit.
+FINAL_WALL_FACTOR = 1.5
+
 THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
 
 
@@ -190,9 +195,14 @@ def run_specialist(
         Msg(role="user", content=user_text or history + card_text(card)),
     ]
 
+    slowest = [0.0]  # longest model call so far, used to keep time for the final answer
+
     def call(tag: str, with_tools: bool) -> LLMResponse:
-        if time.monotonic() - t0 > ctx.wall_seconds:
-            raise ProviderError(f"specialist wall time over {ctx.wall_seconds:.0f}s")
+        # Investigation stops early (see _investigate); the final and repair calls get the slack.
+        limit = ctx.wall_seconds * (1 if with_tools else FINAL_WALL_FACTOR)
+        if time.monotonic() - t0 > limit:
+            raise ProviderError(f"specialist wall time over {limit:.0f}s")
+        t_call = time.monotonic()
         ctx.charge("llm")
         est = context.fit(messages, tools if with_tools else [])
         resp = ctx.router.complete(
@@ -201,7 +211,9 @@ def run_specialist(
             tools if with_tools else [],
             tag=f"{card.exception_id}:{tag}",
             est_input_tokens=est,
+            json_schema=None if with_tools else DRAFT_SCHEMA,
         )
+        slowest[0] = max(slowest[0], time.monotonic() - t_call)
         usage.llm_calls += 1
         usage.input_tokens += resp.input_tokens
         usage.output_tokens += resp.output_tokens
@@ -209,7 +221,9 @@ def run_specialist(
         return resp
 
     try:
-        draft = _investigate(ctx, card, cand, messages, call, allowed, max_calls, max_idle)
+        draft = _investigate(
+            ctx, card, cand, messages, call, allowed, max_calls, max_idle, t0, slowest
+        )
         if draft is None:
             messages.append(
                 Msg(
@@ -239,10 +253,16 @@ def _investigate(
     allowed: tuple[str, ...],
     max_calls: int,
     max_idle: int,
+    t0: float,
+    slowest: list[float],
 ) -> RecommendationDraft | None:
     """Tool phase. Returns a draft if the model already answered in JSON, else None."""
     idle = 0
     while cand.usage.tool_calls < max_calls:
+        # Slow local models: stop investigating while two calls' worth of time is still left, so
+        # the final JSON call is not starved (the cause of RULES_FALLBACK on `local`).
+        if cand.usage.llm_calls and (time.monotonic() - t0 + 2 * slowest[0] > ctx.wall_seconds):
+            return None
         resp: LLMResponse = call(f"turn{cand.usage.llm_calls + 1}", with_tools=True)
         if not resp.tool_calls:
             try:
@@ -261,7 +281,7 @@ def _investigate(
             n = cand.usage.tool_calls + len(calls) + 1
             if n > max_calls:
                 break
-            calls.append(ToolCall(id=f"tc{n}", name=c.name, args=c.args))
+            calls.append(ToolCall(id=f"tc{n}", name=c.name, args=c.args, extra=c.extra))
         messages.append(Msg(role="assistant", content="", tool_calls=calls))
         for c in calls:
             cand.usage.tool_calls += 1
@@ -334,7 +354,12 @@ def repair_draft(
     ctx.charge("llm")
     est = context.fit(messages, [])
     resp = ctx.router.complete(
-        "specialist", messages, [], tag=f"{card.exception_id}:repair", est_input_tokens=est
+        "specialist",
+        messages,
+        [],
+        tag=f"{card.exception_id}:repair",
+        est_input_tokens=est,
+        json_schema=DRAFT_SCHEMA,
     )
     cand.usage.llm_calls += 1
     cand.usage.input_tokens += resp.input_tokens

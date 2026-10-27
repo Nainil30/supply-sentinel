@@ -20,7 +20,10 @@ def request_key(role: str, model: str, messages: list[Msg], tools: list[dict[str
     payload = {
         "role": role,
         "model": model,
-        "messages": [m.model_dump(exclude_defaults=True) for m in messages],
+        "messages": [
+            m.model_dump(exclude_defaults=True, exclude={"tool_calls": {"__all__": {"extra"}}})
+            for m in messages
+        ],
         "tools": tools,
     }
     blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
@@ -52,7 +55,11 @@ class CassetteClient:
         return self._model_ids[role]
 
     def complete(
-        self, role: Role, messages: list[Msg], tools: list[dict[str, object]]
+        self,
+        role: Role,
+        messages: list[Msg],
+        tools: list[dict[str, object]],
+        json_schema: dict[str, object] | None = None,
     ) -> LLMResponse:
         key = request_key(role, self.model_id(role), messages, tools)
         if key in self._entries:
@@ -64,7 +71,7 @@ class CassetteClient:
                 f"Prompts changed since recording? Last message: {last!r}. "
                 "Re-record with `sentinel run --profile local --record`."
             )
-        resp = self.inner.complete(role, messages, tools)
+        resp = self.inner.complete(role, messages, tools, json_schema)
         with self._lock:
             self._entries[key] = resp
             self.path.parent.mkdir(parents=True, exist_ok=True)

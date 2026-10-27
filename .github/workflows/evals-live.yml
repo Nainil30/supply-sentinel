@@ -14,7 +14,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-live-evals')
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       SENTINEL_TODAY: "2026-11-02"
     steps:
       - uses: actions/checkout@v4
