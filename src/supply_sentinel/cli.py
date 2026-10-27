@@ -317,6 +317,13 @@ def eval_(
     except (KeyError, FileNotFoundError, ValueError) as exc:
         typer.echo(f"Cannot select scenarios: {exc}")
         raise typer.Exit(code=1) from exc
+    if profile == "replay" and system == "agent":
+        # Only scenarios with a recorded cassette can be replayed; say which ones are skipped.
+        have = {p.stem for p in Path("evals/cassettes").glob("*/*.jsonl")}
+        skipped = [s.id for s in chosen if s.id not in have]
+        chosen = [s for s in chosen if s.id in have]
+        if skipped:
+            typer.echo(f"No cassette yet for {skipped}; record with `--profile local --record`.")
     if not chosen:
         typer.echo(f"No scenarios in suite '{suite}'.")
         raise typer.Exit(code=1)
