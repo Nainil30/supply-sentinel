@@ -1,0 +1,422 @@
+{
+ "meta": {
+  "suite": "smoke",
+  "system": "agent",
+  "profile": "local",
+  "k": 1,
+  "started": "2026-10-27T18:32:15.300247+00:00",
+  "judge": false,
+  "run_date": "2026-11-02",
+  "finished": "2026-10-27T19:43:26.298732+00:00"
+ },
+ "results": [
+  {
+   "scenario_id": "EO-01",
+   "category": "eo",
+   "difficulty": "easy",
+   "gate": null,
+   "run_idx": 0,
+   "passed": true,
+   "crashed": false,
+   "error": null,
+   "scores": {
+    "detection": {
+     "name": "detection",
+     "passed": true,
+     "hard": true,
+     "detail": "EXCESS raised",
+     "num": 0,
+     "den": 0
+    },
+    "action": {
+     "name": "action",
+     "passed": true,
+     "hard": true,
+     "detail": "CANCEL_PO",
+     "num": 0,
+     "den": 0
+    },
+    "quantity": {
+     "name": "quantity",
+     "passed": true,
+     "hard": true,
+     "detail": "[2084.9096] in [2083.91, 2085.91]",
+     "num": 0,
+     "den": 0
+    },
+    "must_not": {
+     "name": "must_not",
+     "passed": true,
+     "hard": true,
+     "detail": "none present",
+     "num": 0,
+     "den": 0
+    },
+    "safety": {
+     "name": "safety",
+     "passed": true,
+     "hard": true,
+     "detail": "ok",
+     "num": 0,
+     "den": 0
+    },
+    "tier": {
+     "name": "tier",
+     "passed": true,
+     "hard": true,
+     "detail": "tier 2, policy says 2",
+     "num": 0,
+     "den": 0
+    },
+    "root_cause": {
+     "name": "root_cause",
+     "passed": false,
+     "hard": false,
+     "detail": "EXCESS_OVERBUY vs ['EXCESS_FORECAST_DROP']",
+     "num": 0,
+     "den": 0
+    },
+    "stakeholder": {
+     "name": "stakeholder",
+     "passed": false,
+     "hard": false,
+     "detail": "GSM vs ['FINANCE', 'GCM']",
+     "num": 0,
+     "den": 0
+    },
+    "must_mention": {
+     "name": "must_mention",
+     "passed": true,
+     "hard": false,
+     "detail": "all 1 present",
+     "num": 0,
+     "den": 0
+    },
+    "comms": {
+     "name": "comms",
+     "passed": null,
+     "hard": false,
+     "detail": "judge not run",
+     "num": 0,
+     "den": 0
+    },
+    "grounding": {
+     "name": "grounding",
+     "passed": false,
+     "hard": false,
+     "detail": "26/30 claims traced; untraced ['REC-01M5ZA4TDQ4PDDQJ-1:21', 'REC-01M5ZA4TDQ4PDDQJ-1:22', 'REC-01M5ZA4TDQ4PDDQJ-1:23', 'REC-01M5ZA4TDQ4PDDQJ-1:24']",
+     "num": 26,
+     "den": 30
+    },
+    "efficiency": {
+     "name": "efficiency",
+     "passed": null,
+     "hard": false,
+     "detail": "8 llm, 4 tool, 27757/1660 tokens, 1709.2s, $0.0000",
+     "num": 0,
+     "den": 0
+    }
+   },
+   "rec": {
+    "rec_id": "REC-01M5ZA4TDQ4PDDQJ-1",
+    "source": "AGENT",
+    "tier": 2,
+    "primary": {
+     "action_type": "CANCEL_PO",
+     "quantity": 2084.9096,
+     "po_ids": [
+      "PO-10345",
+      "PO-10346",
+      "PO-10347",
+      "PO-10348",
+      "PO-10349",
+      "PO-10350",
+      "PO-10351",
+      "PO-10352",
+      "PO-10353"
+     ],
+     "target_week_idx": 1,
+     "platform_allocations": null
+    },
+    "secondary": null,
+    "root_cause": "EXCESS_OVERBUY",
+    "stakeholder": "GSM"
+   },
+   "usage": {
+    "llm_calls": 8,
+    "tool_calls": 4,
+    "input_tokens": 27757,
+    "output_tokens": 1660,
+    "seconds": 1709.24,
+    "cost_usd": 0.0
+   },
+   "ledger": "data\\state\\evals\\20261027T183215\\EO-01-0\\runs\\01M5ZA4TDQ4PDDQJ\\ledger.jsonl"
+  },
+  {
+   "scenario_id": "SHT-01",
+   "category": "shortage",
+   "difficulty": "easy",
+   "gate": null,
+   "run_idx": 0,
+   "passed": true,
+   "crashed": false,
+   "error": null,
+   "scores": {
+    "detection": {
+     "name": "detection",
+     "passed": true,
+     "hard": true,
+     "detail": "SHORTAGE raised",
+     "num": 0,
+     "den": 0
+    },
+    "action": {
+     "name": "action",
+     "passed": true,
+     "hard": true,
+     "detail": "PULL_IN_PO",
+     "num": 0,
+     "den": 0
+    },
+    "quantity": {
+     "name": "quantity",
+     "passed": true,
+     "hard": true,
+     "detail": "[150.0] in [148.455, 150.455]",
+     "num": 0,
+     "den": 0
+    },
+    "must_not": {
+     "name": "must_not",
+     "passed": true,
+     "hard": true,
+     "detail": "none present",
+     "num": 0,
+     "den": 0
+    },
+    "safety": {
+     "name": "safety",
+     "passed": true,
+     "hard": true,
+     "detail": "ok",
+     "num": 0,
+     "den": 0
+    },
+    "tier": {
+     "name": "tier",
+     "passed": true,
+     "hard": true,
+     "detail": "tier 2, policy says 2",
+     "num": 0,
+     "den": 0
+    },
+    "root_cause": {
+     "name": "root_cause",
+     "passed": true,
+     "hard": false,
+     "detail": "SUPPLIER_SLIP vs ['SUPPLIER_SLIP']",
+     "num": 0,
+     "den": 0
+    },
+    "stakeholder": {
+     "name": "stakeholder",
+     "passed": true,
+     "hard": false,
+     "detail": "GSM vs ['GSM']",
+     "num": 0,
+     "den": 0
+    },
+    "must_mention": {
+     "name": "must_mention",
+     "passed": false,
+     "hard": false,
+     "detail": "missing: ['PO-10621']",
+     "num": 0,
+     "den": 0
+    },
+    "comms": {
+     "name": "comms",
+     "passed": null,
+     "hard": false,
+     "detail": "judge not run",
+     "num": 0,
+     "den": 0
+    },
+    "grounding": {
+     "name": "grounding",
+     "passed": true,
+     "hard": false,
+     "detail": "16/16 claims traced",
+     "num": 16,
+     "den": 16
+    },
+    "efficiency": {
+     "name": "efficiency",
+     "passed": null,
+     "hard": false,
+     "detail": "5 llm, 3 tool, 18518/978 tokens, 1188.7s, $0.0000",
+     "num": 0,
+     "den": 0
+    }
+   },
+   "rec": {
+    "rec_id": "REC-01M5ZBS34VE0FY3F-1",
+    "source": "AGENT",
+    "tier": 2,
+    "primary": {
+     "action_type": "PULL_IN_PO",
+     "quantity": 150.0,
+     "po_ids": [
+      "PO-10612"
+     ],
+     "target_week_idx": 6,
+     "platform_allocations": null
+    },
+    "secondary": null,
+    "root_cause": "SUPPLIER_SLIP",
+    "stakeholder": "GSM"
+   },
+   "usage": {
+    "llm_calls": 5,
+    "tool_calls": 3,
+    "input_tokens": 18518,
+    "output_tokens": 978,
+    "seconds": 1188.66,
+    "cost_usd": 0.0
+   },
+   "ledger": "data\\state\\evals\\20261027T183215\\SHT-01-0\\runs\\01M5ZBS34VE0FY3F\\ledger.jsonl"
+  },
+  {
+   "scenario_id": "SHT-05",
+   "category": "shortage",
+   "difficulty": "hard",
+   "gate": null,
+   "run_idx": 0,
+   "passed": false,
+   "crashed": false,
+   "error": null,
+   "scores": {
+    "detection": {
+     "name": "detection",
+     "passed": true,
+     "hard": true,
+     "detail": "SHORTAGE raised",
+     "num": 0,
+     "den": 0
+    },
+    "action": {
+     "name": "action",
+     "passed": false,
+     "hard": true,
+     "detail": "primary EXPEDITE not in ['ALLOCATE']",
+     "num": 0,
+     "den": 0
+    },
+    "quantity": {
+     "name": "quantity",
+     "passed": null,
+     "hard": true,
+     "detail": "no quantity rule",
+     "num": 0,
+     "den": 0
+    },
+    "must_not": {
+     "name": "must_not",
+     "passed": true,
+     "hard": true,
+     "detail": "none present",
+     "num": 0,
+     "den": 0
+    },
+    "safety": {
+     "name": "safety",
+     "passed": true,
+     "hard": true,
+     "detail": "ok",
+     "num": 0,
+     "den": 0
+    },
+    "tier": {
+     "name": "tier",
+     "passed": true,
+     "hard": true,
+     "detail": "tier 2, policy says 2",
+     "num": 0,
+     "den": 0
+    },
+    "root_cause": {
+     "name": "root_cause",
+     "passed": true,
+     "hard": false,
+     "detail": "DEMAND_SPIKE vs ['DEMAND_SPIKE']",
+     "num": 0,
+     "den": 0
+    },
+    "stakeholder": {
+     "name": "stakeholder",
+     "passed": true,
+     "hard": false,
+     "detail": "GSM vs ['PM', 'GSM']",
+     "num": 0,
+     "den": 0
+    },
+    "must_mention": {
+     "name": "must_mention",
+     "passed": false,
+     "hard": false,
+     "detail": "missing: ['ORB-S4']",
+     "num": 0,
+     "den": 0
+    },
+    "comms": {
+     "name": "comms",
+     "passed": null,
+     "hard": false,
+     "detail": "judge not run",
+     "num": 0,
+     "den": 0
+    },
+    "grounding": {
+     "name": "grounding",
+     "passed": true,
+     "hard": false,
+     "detail": "8/8 claims traced",
+     "num": 8,
+     "den": 8
+    },
+    "efficiency": {
+     "name": "efficiency",
+     "passed": null,
+     "hard": false,
+     "detail": "10 llm, 7 tool, 41501/1045 tokens, 1363.5s, $0.0000",
+     "num": 0,
+     "den": 0
+    }
+   },
+   "rec": {
+    "rec_id": "REC-01M5ZCXEX61ZCWDM-1",
+    "source": "AGENT",
+    "tier": 2,
+    "primary": {
+     "action_type": "EXPEDITE",
+     "quantity": 282.0,
+     "po_ids": null,
+     "target_week_idx": 10,
+     "platform_allocations": null
+    },
+    "secondary": null,
+    "root_cause": "DEMAND_SPIKE",
+    "stakeholder": "GSM"
+   },
+   "usage": {
+    "llm_calls": 10,
+    "tool_calls": 7,
+    "input_tokens": 41501,
+    "output_tokens": 1045,
+    "seconds": 1363.55,
+    "cost_usd": 0.0
+   },
+   "ledger": "data\\state\\evals\\20261027T183215\\SHT-05-0\\runs\\01M5ZCXEX61ZCWDM\\ledger.jsonl"
+  }
+ ]
+}

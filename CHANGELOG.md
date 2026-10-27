@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Phase 8 (reduced scope, no paid or cloud runs): fix for RULES_FALLBACK on slow local models (time reserve for the final call, JSON-schema bound final turn, ADR 0015), `docs/ERROR_ANALYSIS.md` with before/after numbers and the list of runs not done.
 - Phase 7: observability and Planner Console. Complete run ledger (run_start, llm_call, tool_call with full output, validation, approval, run_end), OpenTelemetry GenAI spans (`invoke_agent`, `execute_tool`, `chat`) plus OpenInference LangGraph spans, file (`spans.jsonl`) and Phoenix exporters, content-capture flag, Streamlit console with 8 pages over a service layer, `sentinel ui`, AppTest smoke tests, `docs/ARCHITECTURE.md`, ADR 0013.
 - Phase 5: LTB, E&O and reconciler specialists, reconcile node (CONFLICT flag, tier >= 2), EOL notice extractor with data-issue recommendations, harness decision-history lookup, run budget (`run_limits`), tool-crash safety in the MCP bridge, cancellable-PO and LTB-source checks, ADR 0010-0011.
 - Phase 6: eval harness (`evals/`): scenario loader and resolver tokens, oracle, scorers (detection, action, quantity, must_not, safety, tier, grounding, root cause, mentions, efficiency), LLM judge and calibration, runner (rules and agent systems, eval mode, resumable), `sentinel eval [report|calibrate]`, 40 scenarios, evals-live and nightly workflows, replay smoke in ci.yml, 5 new data ops, `set_quality_hold` fix, ADR 0012.
