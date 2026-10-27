@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- Phase 9: Dockerfile and compose (replay by default), devcontainer, release workflow, SECURITY.md, THREAT_MODEL, DEMO_SCRIPT, DEPLOY, Copilot instructions and custom agent, hosted demo entry `hosted_app.py`, README to spec section 8 with numbers from committed results, shipping tests.
 - Phase 8 (reduced scope, no paid or cloud runs): fix for RULES_FALLBACK on slow local models (time reserve for the final call, JSON-schema bound final turn, ADR 0015), `docs/ERROR_ANALYSIS.md` with before/after numbers and the list of runs not done.
 - Phase 7: observability and Planner Console. Complete run ledger (run_start, llm_call, tool_call with full output, validation, approval, run_end), OpenTelemetry GenAI spans (`invoke_agent`, `execute_tool`, `chat`) plus OpenInference LangGraph spans, file (`spans.jsonl`) and Phoenix exporters, content-capture flag, Streamlit console with 8 pages over a service layer, `sentinel ui`, AppTest smoke tests, `docs/ARCHITECTURE.md`, ADR 0013.
 - Phase 5: LTB, E&O and reconciler specialists, reconcile node (CONFLICT flag, tier >= 2), EOL notice extractor with data-issue recommendations, harness decision-history lookup, run budget (`run_limits`), tool-crash safety in the MCP bridge, cancellable-PO and LTB-source checks, ADR 0010-0011.

@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.env.*
+!.env.example
+__pycache__
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.hypothesis
+data/snapshots
+data/state
+runs
+_private

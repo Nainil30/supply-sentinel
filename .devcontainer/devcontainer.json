@@ -1,0 +1,13 @@
+{
+  "name": "supply-sentinel",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/va-h/devcontainers-features/uv:1": {}
+  },
+  "postCreateCommand": "uv sync && uv run sentinel datagen --seed 42 && SENTINEL_TODAY=2026-11-02 uv run sentinel eval --suite smoke --profile replay",
+  "forwardPorts": [8501, 6006, 8765],
+  "customizations": {
+    "vscode": { "extensions": ["ms-python.python", "charliermarsh.ruff"] }
+  }
+}
