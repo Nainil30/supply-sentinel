@@ -15,7 +15,7 @@ Excess is inventory beyond what the next 52 weeks need plus safety stock. Obsole
 
 1. **Size the exposure.** `compute_eo_exposure`: supply, 52-week need, safety stock, excess units and dollars, cancellable quantity, avoidable dollars, residual, and obsolete units and dollars.
 2. **Check every consumer.** `get_where_used`. Netting is already at part level, but confirm that no platform is ramping and that service demand to EOSL is covered before you cut supply.
-3. **Look for near-term risk on the same part.** `get_part_position`. If the part also has a near-term shortage, the problem is timing, not quantity: a pull-in of a late PO may fix both. Say so and let the reconcile step consolidate.
+3. **Look for near-term risk on the same part.** `get_part_position`. If the part also has a near-term shortage, the problem is timing, not quantity: pulling in a late PO may fix both, but you cannot recommend a pull-in here. Report the near-term shortage in your rationale and let the reconcile step consolidate.
 4. **Work the POs.** `get_open_pos`: which POs are cancellable (outside the cancellation window) and which can only be pushed out.
 5. **Test the change.** `simulate_scenario` with the proposed cancel or push-out to show no shortage is created inside the horizon. Cite the result.
 6. **Check history.** `get_decision_history`: was a cancellation already requested or rejected?

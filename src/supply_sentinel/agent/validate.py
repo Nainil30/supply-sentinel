@@ -188,6 +188,24 @@ def known_po_ids(tool_log: dict[str, Any]) -> set[str]:
     return set(PO_RE.findall(json.dumps(tool_log, default=str)))
 
 
+def not_cancellable(tool_log: dict[str, Any]) -> set[str]:
+    """PO ids that any get_open_pos result marks cancellable == false."""
+    found: set[str] = set()
+
+    def walk(o: Any) -> None:
+        if isinstance(o, dict):
+            if o.get("cancellable") is False and isinstance(o.get("po_id"), str):
+                found.add(o["po_id"])
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(tool_log)
+    return found
+
+
 def check_policy(
     draft: RecommendationDraft, card: ExceptionCard, tool_log: dict[str, Any], policy: Policy
 ) -> list[Issue]:
@@ -210,6 +228,10 @@ def check_policy(
             issues.append(Issue("policy", f"{label} action {name} needs a quantity greater than 0"))
         if action.action_type in NEEDS_PO_IDS and not action.po_ids:
             issues.append(Issue("policy", f"{label} action {name} needs po_ids"))
+        if action.action_type == ActionType.CANCEL_PO:
+            for po in action.po_ids or []:
+                if po in not_cancellable(tool_log):
+                    issues.append(Issue("policy", f"PO {po} is not cancellable (get_open_pos)"))
         for po in action.po_ids or []:
             if po not in pos:
                 issues.append(
@@ -233,6 +255,22 @@ def _walk_values(obj: Any, key: str) -> list[float]:
         for v in obj:
             found.extend(_walk_values(v, key))
     return found
+
+
+def _ltb_quantities(tool_log: dict[str, Any], kind: ActionType) -> list[float]:
+    """LTB_BUY must match result.sizing; BRIDGE_BUY must match result.bridge.sizing."""
+    found: list[float] = []
+    for out in tool_log.values():
+        res = out.get("result") if isinstance(out, dict) else None
+        if not isinstance(res, dict):
+            continue
+        part = (
+            res.get("sizing")
+            if kind == ActionType.LTB_BUY
+            else (res.get("bridge") or {}).get("sizing")
+        )
+        found.extend(_walk_values(part, "order_qty_units"))
+    return found or _walk_values(tool_log, "order_qty_units")
 
 
 def check_sanity(
@@ -264,7 +302,7 @@ def check_sanity(
                     )
                 )
         if action.action_type in (ActionType.LTB_BUY, ActionType.BRIDGE_BUY):
-            allowed = _walk_values(tool_log, "order_qty_units")
+            allowed = _ltb_quantities(tool_log, action.action_type)
             if not any(numbers_match(action.quantity, a) for a in allowed):
                 issues.append(
                     Issue(

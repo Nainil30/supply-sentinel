@@ -10,7 +10,8 @@ from typer.testing import CliRunner
 from supply_sentinel.cli import app
 from supply_sentinel.datagen import generator
 
-# The cassette was recorded with `--max-exceptions 1` (first exception: P-PHY-100G).
+# The cassette covers all three base exceptions. The local qwen3:8b model did not return a
+# usable recommendation for any of them, so each one is a visible RULES_FALLBACK (see OWNER_REVIEW).
 
 
 @pytest.fixture(scope="module")
@@ -29,9 +30,12 @@ def invoke(*args):
 def test_replay_pause_approve_resume_offline(env, monkeypatch):
     db, d = env
     monkeypatch.setenv("SENTINEL_TODAY", "2026-11-02")
-    out = invoke("run", "--snapshot", str(db), "--cassette", "base", "--max-exceptions", "1",
+    out = invoke("run", "--snapshot", str(db), "--cassette", "base",
                  "--state-dir", str(d))  # fmt: skip
-    assert "paused at the approval gate" in out and "P-PHY-100G" in out
+    assert "paused at the approval gate" in out
+    for part in ("P-PHY-100G", "P-HSINK-L", "P-HSINK-S"):  # one recommendation per exception type
+        assert part in out
+    assert out.count("RULES_FALLBACK") >= 3
     run_id = (d / "latest_run").read_text().strip()
     rec_id = f"REC-{run_id}-1"
 
@@ -64,7 +68,7 @@ def test_replay_pause_approve_resume_offline(env, monkeypatch):
 def test_reject_needs_a_reason(env, monkeypatch):
     db, d = env
     monkeypatch.setenv("SENTINEL_TODAY", "2026-11-02")
-    invoke("run", "--snapshot", str(db), "--cassette", "base", "--max-exceptions", "1",
+    invoke("run", "--snapshot", str(db), "--cassette", "base",
            "--state-dir", str(d))  # fmt: skip
     run_id = (d / "latest_run").read_text().strip()
     res = CliRunner().invoke(app, ["reject", f"REC-{run_id}-1", "--state-dir", str(d)])

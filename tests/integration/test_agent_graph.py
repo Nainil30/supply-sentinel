@@ -69,15 +69,20 @@ def test_pause_approve_resume(base_db):
     )
     final = runner.resume(d, run_id, client=client)
 
-    assert {o["status"] for o in final["outcomes"]} == {"APPROVED", "REJECTED"}
+    # The excess exception now goes to the E&O specialist; the scripted model fails it too,
+    # so it is a third fallback that nobody decided yet.
+    assert {o["status"] for o in final["outcomes"]} == {"APPROVED", "REJECTED", "PENDING"}
     brief = (d / "runs" / run_id / "weekly_brief.md").read_text(encoding="utf-8")
-    assert "Weekly supply brief" in brief and "P-HSINK-S" in brief  # deferred excess exception
+    assert "Weekly supply brief" in brief and "P-HSINK-S" in brief
     rows = (
         sqlite3.connect(d / "decisions.sqlite")
         .execute("SELECT status FROM decision_log WHERE run_id = ?", (run_id,))
         .fetchall()
     )
-    assert sorted(r[0] for r in rows) == ["APPROVED", "REJECTED"]
+    assert sorted(r[0] for r in rows) == [
+        "APPROVED",
+        "REJECTED",
+    ]  # run_id is set only on decided rows
 
 
 def test_ledger_has_token_counts_under_budget(base_db):

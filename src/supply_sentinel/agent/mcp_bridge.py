@@ -77,7 +77,14 @@ class McpBridge:
         async def go(client: Client) -> Any:
             return await client.call_tool(name, args)
 
-        result = self._run(go)
+        try:
+            result = self._run(go)
+        except (
+            Exception
+        ) as exc:  # a tool crashed (e.g. explain_root_cause on a part with no shortage)
+            return {
+                "error": f"Tool '{name}' failed: {str(exc).splitlines()[0] if str(exc) else type(exc).__name__}"
+            }
         if result.is_error:
             text = " ".join(getattr(c, "text", "") for c in result.content)
             return {"error": text}

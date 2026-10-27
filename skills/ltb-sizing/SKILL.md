@@ -24,9 +24,9 @@ An EOL notice starts a clock. Buy too little and a platform stops shipping or yo
 
 | Situation | Primary | Secondary | Quantity source |
 |---|---|---|---|
-| No alternate, net LTB > 0 | LTB_BUY | — | `order_qty` (full) |
-| Alternate IN_QUAL or NOT_STARTED | QUALIFY_ALTERNATE | BRIDGE_BUY | `bridge.order_qty` |
-| Alternate QUALIFIED | BRIDGE_BUY | QUALIFY_ALTERNATE (cutover) | `bridge.order_qty` |
+| No alternate, net LTB > 0 | LTB_BUY | — | `result.sizing.order_qty_units` (full) |
+| Alternate IN_QUAL or NOT_STARTED | QUALIFY_ALTERNATE | BRIDGE_BUY | `result.bridge.sizing.order_qty_units` |
+| Alternate QUALIFIED | BRIDGE_BUY | QUALIFY_ALTERNATE (cutover) | `result.bridge.sizing.order_qty_units` |
 | Net LTB = 0 (existing supply covers lifetime need) | MONITOR | — | cite net = 0 |
 | Notice data conflicts or demand data missing | DATA_ISSUE_FLAG | LTB_BUY only if dates are confirmed | — |
 
@@ -34,7 +34,7 @@ Rules-engine suggestion: it always proposes the full LTB and ignores alternates.
 
 ## What to call out
 
-- `requires_second_approver` is true: say plainly that the spend needs a second approver.
+- `result.requires_second_approver` is true: say plainly that the spend needs a second approver.
 - Service-only platforms: the buy covers spares to EOSL, not production.
 - Uncertainty: if the platform's forecast error is high, mention that the quantity includes a buffer driven by the critical ratio (cite CR and z).
 - Shelf life or storage limits if the part data shows them.
