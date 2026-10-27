@@ -1,0 +1,88 @@
+# Reference labels for the message judge (spec 05 section 5).
+# labeler: ai-reference  -> labelled by a second model from the rubric alone. PROVISIONAL.
+# The owner re-labels the same 15 messages into evals/human_labels/comms_labels.yaml.
+# Messages are hand-written drafts (good and weak on purpose), not yet taken from real runs.
+labeler: ai-reference
+rubric: |
+  1 bottom_line_first: the ask is in the first sentence.
+  2 right_audience: content fits the stakeholder (GSM supplier action, GCM commodity/$,
+    PM customer/allocation impact, FINANCE exposure/reserve, QUALITY hold disposition).
+  3 numbers_consistent: quantity, date or week, and $ where relevant are present and agree with facts.
+  4 decision_and_deadline: a clear decision is requested and a deadline is stated.
+  5 concise_professional: at most 150 words, professional.
+items:
+  - id: M-01
+    stakeholder: GSM
+    facts: {part_id: P-PSU-3000AC, action: PULL_IN_PO, quantity: 150, target_week_idx: 16}
+    message: "Please pull in the late P-PSU-3000AC purchase order so 150 units land by week 16. The part is 150 units short from week 16 after a 3-week slip. Can you confirm a new ship date by Friday?"
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-02
+    stakeholder: GSM
+    facts: {part_id: P-PSU-3000AC, action: PULL_IN_PO, quantity: 150, target_week_idx: 16}
+    message: "Hi team, hope you are well. I was looking at the supply plan this morning and noticed some things around the power supplies that might be worth a look at some point. There may be a timing issue with one order but I have not checked every detail yet, so let me know what you think when you get a chance."
+    labels: {bottom_line_first: false, right_audience: false, numbers_consistent: false, decision_and_deadline: false, concise_professional: true}
+  - id: M-03
+    stakeholder: GCM
+    facts: {part_id: P-CPLD-S4, action: LTB_BUY, quantity: 700}
+    message: "Approve a last-time buy of 700 P-CPLD-S4 (about $26,600) before the supplier's 2027-01-15 cutoff. S4 is the only user and there is no alternate. Please decide by 2026-11-20 so we can place the order in time."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-04
+    stakeholder: GCM
+    facts: {part_id: P-CPLD-S4, action: LTB_BUY, quantity: 700}
+    message: "[P2] LTB_BUY for P-CPLD-S4. Rules engine suggestion; please review."
+    labels: {bottom_line_first: false, right_audience: false, numbers_consistent: false, decision_and_deadline: false, concise_professional: true}
+  - id: M-05
+    stakeholder: PM
+    facts: {part_id: P-PSU-2000AC, action: ALLOCATE, quantity: 282}
+    message: "We need to allocate the short P-PSU-2000AC supply between L4 and S4: about 282 units are missing from week 10. Proposed split favours L4 quarter-end shipments and cuts S4 builds by the shortfall. Please confirm the customer impact you can accept by Wednesday."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-06
+    stakeholder: FINANCE
+    facts: {part_id: P-DDR5-16G, action: CANCEL_PO, quantity: 2085}
+    message: "We plan to cancel 2,085 units of P-DDR5-16G on open POs, which avoids about $198k of excess after the forecast cut. No reserve is needed if the cancel is accepted. Please acknowledge by Monday; the cancel window closes soon."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-07
+    stakeholder: FINANCE
+    facts: {part_id: P-DDR5-16G, action: CANCEL_PO, quantity: 2085}
+    message: "Please cancel 5000 units of P-DDR5-16G today, it is urgent and the VP wants it done. Thanks."
+    labels: {bottom_line_first: true, right_audience: false, numbers_consistent: false, decision_and_deadline: true, concise_professional: true}
+  - id: M-08
+    stakeholder: QUALITY
+    facts: {part_id: P-SSD-240, action: REVIEW_QUALITY_HOLD, quantity: 200}
+    message: "Please decide disposition for the 400 units of P-SSD-240 on hold: releasing about 200 clears a shortage that starts in week 5. Tell us release, rework or scrap by Thursday so planning can adjust."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-09
+    stakeholder: GSM
+    facts: {part_id: P-CLK-J1, action: ESCALATE_SUPPLIER, quantity: 1000}
+    message: "Escalate to the supplier: P-CLK-J1 commits show 1,000 units missing in week 8 with a note that shipment is partial next month. Please get a firm recovery date and quantity by Friday and tell us if the PO can be expedited."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-10
+    stakeholder: GSM
+    facts: {part_id: P-CLK-J1, action: ESCALATE_SUPPLIER, quantity: 1000}
+    message: "Background: P-CLK-J1 is a jitter-cleaner clock IC used on S16, S8, S4 and L4 and we have been buying it for a long time from the same supplier with generally good delivery. Over the last several quarters there have been occasional small variations in commits, and in the current plan there is a gap in one week and a note from the supplier. In light of all of this, and after considering several options including doing nothing for now, it might be sensible at some point to raise it with them if that seems appropriate to you and the wider team, and we would appreciate any thoughts."
+    labels: {bottom_line_first: false, right_audience: false, numbers_consistent: false, decision_and_deadline: false, concise_professional: true}
+  - id: M-11
+    stakeholder: PM
+    facts: {part_id: P-RTM-224G, action: QUALIFY_ALTERNATE, quantity: 6900}
+    message: "Start qualifying the second-source retimer now and approve a bridge buy of 6,900 P-RTM-224G: the part goes end-of-life during the S16 NPI and qualification takes 26 weeks. Please confirm the bridge by 2026-11-13 so the order meets the supplier's last-time-buy date."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-12
+    stakeholder: GCM
+    facts: {part_id: P-RTM-224G, action: QUALIFY_ALTERNATE, quantity: 6900}
+    message: "Please buy a lot of retimers soon. It is probably around 7 thousand pieces or so, depending. The deadline is whenever you can."
+    labels: {bottom_line_first: true, right_audience: false, numbers_consistent: false, decision_and_deadline: false, concise_professional: true}
+  - id: M-13
+    stakeholder: GSM
+    facts: {part_id: P-PSU-3000AC, action: ESCALATE_SUPPLIER}
+    message: "Escalate P-PSU-3000AC to the supplier: the pull-in we approved last week did not hold and the PO slipped again to week 13. We need a committed ship date and a plan to recover 150 units. Please reply by Tuesday."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-14
+    stakeholder: FINANCE
+    facts: {part_id: P-CHS-L1, action: DISPOSITION_REVIEW, quantity: 2410}
+    message: "Review disposition of about 2,410 excess P-CHS-L1 chassis (around $132k): L1 is service-only, so keep the service spares and decide on the rest. Please set the reserve decision by month end."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
+  - id: M-15
+    stakeholder: GSM
+    facts: {part_id: P-FAN-80, action: PLACE_PO, quantity: 1300}
+    message: "Place a PO for 1,300 P-FAN-80 (multiple of 50). First shortage is week 12, beyond the 9-week lead time, so a new order still lands in time. Approve today and we will release it this week; please also check the supplier's capacity."
+    labels: {bottom_line_first: true, right_audience: true, numbers_consistent: true, decision_and_deadline: true, concise_professional: true}
