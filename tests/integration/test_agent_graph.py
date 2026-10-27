@@ -79,7 +79,10 @@ def test_pause_approve_resume(base_db):
         .execute("SELECT status FROM decision_log WHERE run_id = ?", (run_id,))
         .fetchall()
     )
-    assert sorted(r[0] for r in rows) == ["APPROVED", "REJECTED"]  # run_id is set only on decided rows
+    assert sorted(r[0] for r in rows) == [
+        "APPROVED",
+        "REJECTED",
+    ]  # run_id is set only on decided rows
 
 
 def test_ledger_has_token_counts_under_budget(base_db):
