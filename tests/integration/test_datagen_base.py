@@ -6,7 +6,7 @@ from pathlib import Path
 import duckdb
 import pytest
 
-from supply_sentinel.datagen import decisions, generator, scenarios, validate
+from supply_sentinel.datagen import catalog, decisions, generator, scenarios, validate
 
 # Independent copy of the spec 01 section 1.3 anchor table:
 # part -> (supplier, unit cost, lead time weeks, MOQ, order multiple)
@@ -191,7 +191,10 @@ def test_coverage_is_realistic_and_anchor_tight_parts_are_tight(con):
     values = sorted(cover.values())
     assert 3 <= values[len(values) // 2] <= 12
     assert cover["P-ASIC-102T"] < 2.5
-    assert min(values) >= 1 and max(values) <= 12
+    # the designed natural-excess part (ADR-0006) is the only one allowed above 12 weeks
+    others = [w for part, w in cover.items() if part not in catalog.NATURAL_EXCESS_PARTS]
+    assert min(values) >= 1 and max(others) <= 12
+    assert max(values) > 12
 
 
 def test_inventory_is_never_negative_and_holds_are_small(con):
@@ -230,7 +233,16 @@ def test_supplier_commits_mirror_next_12_weeks(con):
     total_po = q(con, "SELECT SUM(qty_units) FROM purchase_orders WHERE promise_week_idx <= 11")[0][
         0
     ]
-    assert total_commit == total_po
+    # the one designed natural commit gap (ADR-0006) is the only difference
+    gap = q(
+        con,
+        "SELECT COALESCE(SUM(p.qty - c.commit_units), 0) FROM supplier_commits c JOIN ("
+        "SELECT part_id, promise_week_idx AS w, SUM(qty_units) AS qty FROM purchase_orders "
+        "GROUP BY 1, 2) p ON p.part_id = c.part_id AND p.w = c.week_idx "
+        "WHERE c.commit_units < p.qty",
+    )[0][0]
+    assert total_commit + gap == total_po
+    assert 0 < gap < 0.01 * total_po
     (n, noted) = q(con, "SELECT COUNT(*), COUNT(note) FROM supplier_commits")[0]
     assert 0.03 <= noted / n <= 0.20
 

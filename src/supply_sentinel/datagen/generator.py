@@ -26,7 +26,12 @@ from supply_sentinel.datagen.demand import (
     week_start,
 )
 from supply_sentinel.datagen.schema import TABLES, create_schema
-from supply_sentinel.datagen.validate import ValidationReport, coverage_weeks, validate_snapshot
+from supply_sentinel.datagen.validate import (
+    NATURAL_EXCEPTIONS_RANGE,
+    ValidationReport,
+    coverage_weeks,
+    validate_snapshot,
+)
 
 DEFAULT_SNAPSHOT_DIR = Path("data/snapshots")
 DEFAULT_STATE_DB = decisions.DEFAULT_DB
@@ -207,6 +212,11 @@ def _usage() -> dict[str, list[tuple[Any, int]]]:
     return usage
 
 
+# Open POs cover at least the engine's 26-week netting horizon (weeks 0-25), so a shortage
+# on the base snapshot means a real gap, not just the edge of the PO book.
+PO_COVER_WEEKS = 25
+
+
 def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
     rng = _rng(seed, S_PO)
     usage = _usage()
@@ -221,7 +231,7 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
 
     raw: list[tuple[str, str, int, int, int, str, int, float]] = []
     for spec in sorted(PARTS, key=lambda s: s.part_id):
-        horizon = spec.lead_time_weeks + 8
+        horizon = max(spec.lead_time_weeks + 8, PO_COVER_WEEKS + 8)
         gross = [_weekly_gross(usage, spec.part_id, t) for t in range(horizon + 1)]
         avg12 = sum(gross[:12]) / 12
         if avg12 <= 0:
@@ -234,7 +244,7 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
         supplier = suppliers[spec.supplier_id]
         window = round(CANCEL_WINDOW_FRACTION[supplier[5]] * spec.lead_time_weeks)
         need = start
-        while need <= max(spec.lead_time_weeks, start):
+        while need <= max(spec.lead_time_weeks, start, PO_COVER_WEEKS):
             demand = sum(gross[need : need + k])
             if demand > 0:
                 mult = spec.order_multiple
@@ -256,6 +266,10 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
             slip = int(rng.choice([1, 2, 3], p=[0.5, 0.3, 0.2]))
             raw[i] = (*raw[i][:4], raw[i][4] + slip, *raw[i][5:])
 
+    for part, weeks in catalog.NATURAL_SLIPS.items():
+        first = min((i for i, row in enumerate(raw) if row[0] == part), key=lambda i: raw[i][3])
+        raw[first] = (*raw[first][:4], raw[first][3] + weeks, *raw[first][5:])
+
     po_rows = [(f"PO-{10001 + i}", *row) for i, row in enumerate(raw)]
     _insert(con, "purchase_orders", po_rows)
 
@@ -265,8 +279,12 @@ def _load_pos_and_commits(con: duckdb.DuckDBPyConnection, seed: int) -> None:
         if promise <= 11:
             commits[(part, sup, promise)] += qty
     commit_rows = []
+    short_left = dict(catalog.NATURAL_COMMIT_SHORT)
     for (part, sup, week), units in sorted(commits.items()):
         note = str(rng.choice(catalog.NOTES_PLAIN)) if rng.random() < 0.10 else None
+        if part in short_left:
+            units = round(units * (1 - short_left.pop(part)))
+            note = catalog.NOTES_PLAIN[0]
         commit_rows.append((part, sup, week, units, note))
     _insert(con, "supplier_commits", commit_rows)
 
@@ -320,7 +338,7 @@ def build_base(
 def validate_path(path: Path) -> ValidationReport:
     con = duckdb.connect(str(path), read_only=True)
     try:
-        return validate_snapshot(con)
+        return validate_snapshot(con, natural_exceptions=NATURAL_EXCEPTIONS_RANGE)
     finally:
         con.close()
 
@@ -398,9 +416,14 @@ def write_summary(path: Path, out: Path = SAMPLE_SUMMARY) -> Path:
         ).fetchall():
             lines.append(f"| {status} | {n} | {slipped} |")
 
-        lines += ["", "## Natural exceptions", "",
-                  "Not computed yet: the exception engine arrives in Phase 2, which will list the "
-                  "2-6 natural exceptions of the base snapshot here.", ""]  # fmt: skip
+        from supply_sentinel.engine.config import load_config
+        from supply_sentinel.engine.exceptions import detect_exceptions
+        from supply_sentinel.engine.loader import load_part_inputs
+
+        found = detect_exceptions(load_part_inputs(con), load_config())
+        lines += ["", "## Natural exceptions", "", "| Exception | Severity |", "|---|---|"]
+        lines += [f"| {e.exception_id} | {e.severity.value} |" for e in found]
+        lines.append("")
     finally:
         con.close()
     out.parent.mkdir(parents=True, exist_ok=True)

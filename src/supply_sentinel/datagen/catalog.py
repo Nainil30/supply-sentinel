@@ -198,7 +198,17 @@ TIGHT_COVERAGE_WEEKS: dict[str, float] = {
     "P-ASIC-102T": 1.5,
     "P-RTM-224G": 2.0,
     "P-DDR5-16G": 2.0,
+    # non-anchor parts with designed natural issues (see NATURAL_* below)
+    "P-PHY-100G": 2.0,
+    "P-HSINK-L": 6.0,
+    "P-HSINK-S": 72.0,
 }
+
+# Designed "natural" issues on non-anchor parts, so the base snapshot has a few exceptions
+# for the engine to find (spec 01 section 4: 2-6). Anchor parts are never touched.
+NATURAL_EXCESS_PARTS = {"P-HSINK-S"}  # cover set in TIGHT_COVERAGE_WEEKS (72 weeks)
+NATURAL_SLIPS: dict[str, int] = {"P-PHY-100G": 3}  # first open PO slips this many weeks
+NATURAL_COMMIT_SHORT: dict[str, float] = {"P-HSINK-L": 0.4}  # first commit is this share short
 
 # Annual spares growth until the last-ship year, then decline.
 SERVICE_GROWTH_PER_YEAR = 0.10
