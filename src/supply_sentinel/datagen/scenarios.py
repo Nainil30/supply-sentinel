@@ -114,19 +114,25 @@ def scale_forecast(
 def set_quality_hold(
     con: duckdb.DuckDBPyConnection, *, part_id: str, location: str, units: int
 ) -> None:
-    """Move `units` from on-hand into quality hold."""
+    """Put `units` more of the on-hand stock on quality hold.
+
+    Held units stay inside `on_hand_units` (the engine's usable stock is on_hand - hold, as the
+    base generator stores it), so only `quality_hold_units` changes. See ADR-0012.
+    """
     row = con.execute(
-        "SELECT on_hand_units FROM inventory WHERE part_id = ? AND location = ?",
+        "SELECT on_hand_units, quality_hold_units FROM inventory "
+        "WHERE part_id = ? AND location = ?",
         [part_id, location],
     ).fetchone()
     if row is None:
         raise ValueError(f"no inventory row for {part_id!r} at {location!r}")
-    if row[0] < units:
-        raise ValueError(f"cannot hold {units} units; only {row[0]} on hand")
+    free = row[0] - row[1]
+    if free < units:
+        raise ValueError(f"cannot hold {units} units; only {free} on hand and not already held")
     con.execute(
-        "UPDATE inventory SET on_hand_units = on_hand_units - ?, "
-        "quality_hold_units = quality_hold_units + ? WHERE part_id = ? AND location = ?",
-        [units, units, part_id, location],
+        "UPDATE inventory SET quality_hold_units = quality_hold_units + ? "
+        "WHERE part_id = ? AND location = ?",
+        [units, part_id, location],
     )
 
 
@@ -244,6 +250,73 @@ def add_decision(
     )
 
 
+@register("set_on_hand")
+def set_on_hand(con: duckdb.DuckDBPyConnection, *, part_id: str, location: str, units: int) -> None:
+    """Set on-hand units at one location (quality-hold units are left as they are)."""
+    if units < 0:
+        raise ValueError("on-hand units cannot be negative")
+    _require(con, "inventory", "part_id", part_id)
+    row = con.execute(
+        "SELECT COUNT(*) FROM inventory WHERE part_id = ? AND location = ?", [part_id, location]
+    ).fetchone()
+    if not row or not row[0]:
+        raise ValueError(f"no inventory row for {part_id!r} at {location!r}")
+    con.execute(
+        "UPDATE inventory SET on_hand_units = ? WHERE part_id = ? AND location = ?",
+        [units, part_id, location],
+    )
+
+
+@register("update_po")
+def update_po(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    po_id: str,
+    qty_units: int | None = None,
+    need_week_idx: int | None = None,
+    promise_week_idx: int | None = None,
+    cancel_window_weeks: int | None = None,
+) -> None:
+    """Overwrite the given fields of an open PO (E&O and under-order scenarios)."""
+    _require(con, "purchase_orders", "po_id", po_id)
+    changes = {
+        "qty_units": qty_units, "need_week_idx": need_week_idx,
+        "promise_week_idx": promise_week_idx, "cancel_window_weeks": cancel_window_weeks,
+    }  # fmt: skip
+    given = {k: v for k, v in changes.items() if v is not None}
+    if not given:
+        raise ValueError("update_po needs at least one field to change")
+    sets = ", ".join(f"{k} = ?" for k in given)
+    con.execute(f"UPDATE purchase_orders SET {sets} WHERE po_id = ?", [*given.values(), po_id])
+
+
+@register("add_po")
+def add_po(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    part_id: str,
+    qty_units: int,
+    need_week_idx: int,
+    promise_week_idx: int | None = None,
+    cancel_window_weeks: int = 0,
+) -> None:
+    """Add an open PO at the part's unit cost and supplier. Ids are PO-S0001, PO-S0002, ..."""
+    row = con.execute(
+        "SELECT supplier_id, unit_cost_usd FROM parts WHERE part_id = ?", [part_id]
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"parts.part_id = {part_id!r} not found")
+    (n,) = con.execute(
+        "SELECT COUNT(*) FROM purchase_orders WHERE po_id LIKE 'PO-S%'"
+    ).fetchone() or (0,)
+    promise = need_week_idx if promise_week_idx is None else promise_week_idx
+    con.execute(
+        "INSERT INTO purchase_orders VALUES (?, ?, ?, ?, ?, ?, 'OPEN', ?, ?)",
+        [f"PO-S{n + 1:04d}", part_id, row[0], qty_units, need_week_idx, promise,
+         cancel_window_weeks, row[1]],
+    )  # fmt: skip
+
+
 @register("drop_rows")
 def drop_rows(con: duckdb.DuckDBPyConnection, *, table: str, where: str) -> None:
     """Delete rows matching a SQL predicate (missing-data scenarios). At least one must match."""
@@ -332,18 +405,26 @@ def build_scenario(
 
 
 def load_perturbations(
-    scenario_id: str, scenario_dir: Path = DEFAULT_SCENARIO_DIR
+    scenario_id: str,
+    scenario_dir: Path = DEFAULT_SCENARIO_DIR,
+    resolver: Callable[[list[dict[str, Any]]], list[dict[str, Any]]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Read `perturbations:` from evals/scenarios/<id>.yaml (resolver tokens arrive in Phase 6)."""
+    """Read `perturbations:` from evals/scenarios/<id>.yaml.
+
+    Resolver tokens (`{first_open_po:<part>}`) need the base snapshot, so the caller passes a
+    `resolver` (see evals.scenario). Without one, a token is an error.
+    """
     file = scenario_dir / f"{scenario_id}.yaml"
     if not file.exists():
         raise FileNotFoundError(f"scenario file {file} not found")
     data = yaml.safe_load(file.read_text(encoding="utf-8")) or {}
     steps: list[dict[str, Any]] = data.get("perturbations") or []
+    if resolver is not None:
+        return resolver(steps)
     for step in steps:
         for key, value in step.items():
             if isinstance(value, str) and value.startswith("{") and ":" in value:
                 raise ValueError(
-                    f"resolver token {value!r} in {key!r} is not supported until Phase 6"
+                    f"resolver token {value!r} in {key!r} needs a resolver (see evals.scenario)"
                 )
     return steps

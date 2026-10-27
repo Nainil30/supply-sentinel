@@ -60,8 +60,12 @@ def open_run(
     config_dir: Path = Path("config"),
     skills_dir: Path = Path("skills"),
     client: ChatClient | None = None,
+    settings_override: dict[str, Any] | None = None,
 ) -> RunHandle:
-    """Build the context and compile the graph. `client` injects a scripted model for tests."""
+    """Build the context and compile the graph. `client` injects a scripted model for tests.
+
+    `settings_override` is how the eval harness sets `eval_mode` and `only_parts`.
+    """
     state_dir.mkdir(parents=True, exist_ok=True)
     ledger = Ledger(run_dir(state_dir, run_id) / "ledger.jsonl", run_id)
     cassette = cassette or snapshot_path.stem
@@ -71,6 +75,7 @@ def open_run(
     settings = load_settings(config_dir)
     if max_exceptions is not None:
         settings["max_exceptions_per_run"] = max_exceptions
+    settings.update(settings_override or {})
     wall = float(
         model_profile.limits.get(
             "specialist_wall_seconds", settings["specialist_limits"]["wall_seconds"]

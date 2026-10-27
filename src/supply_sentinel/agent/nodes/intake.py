@@ -86,8 +86,9 @@ def _impact(card: dict[str, Any]) -> float:
 
 def prioritize(ctx: RunContext, state: AgentState) -> dict[str, Any]:
     """Sort by severity then impact, cap the run, and route by exception type."""
+    only = ctx.settings.get("only_parts")  # eval harness: investigate just the scenario's part
     cards = sorted(
-        state.get("cards", []),
+        [c for c in state.get("cards", []) if not only or c["exception"]["part_id"] in only],
         key=lambda c: (SEVERITY_RANK[Severity(c["exception"]["severity"])], -_impact(c)),
     )[: int(ctx.settings["max_exceptions_per_run"])]
     handled = (*shortage.HANDLES, *ltb.HANDLES, *eo.HANDLES)

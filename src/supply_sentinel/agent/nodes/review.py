@@ -198,9 +198,15 @@ def pending_summary(rec: dict[str, Any]) -> dict[str, Any]:
 
 
 def approval_gate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
-    """One interrupt for every recommendation that needs a human (tier 1 or 2)."""
+    """One interrupt for every recommendation that needs a human (tier 1 or 2).
+
+    In eval mode every recommendation is held, tier 0 included, so nothing is auto-recorded.
+    """
+    hold_all = bool(ctx.settings.get("eval_mode"))
     pending = [
-        pending_summary(r) for r in state.get("recommendations", []) if r["autonomy_tier"] >= 1
+        pending_summary(r)
+        for r in state.get("recommendations", [])
+        if hold_all or r["autonomy_tier"] >= 1
     ]
     if not pending:
         return {"decisions": []}
