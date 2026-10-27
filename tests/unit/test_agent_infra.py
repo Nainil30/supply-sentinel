@@ -165,3 +165,16 @@ def test_key_depends_on_every_input():
     assert base != request_key("specialist", "m1", [Msg(role="user", content="r")], [])
     assert base != request_key("specialist", "m1", m, [{"type": "function"}])
     assert base == request_key("specialist", "m1", [Msg(role="user", content="q")], [])
+
+
+def test_bridge_returns_error_when_a_tool_crashes(tmp_path):
+    from pathlib import Path
+
+    from supply_sentinel.agent.mcp_bridge import McpBridge
+    from supply_sentinel.datagen import generator
+    from supply_sentinel.mcp_server.context import Snapshot
+
+    db = generator.build_base(seed=42, out_dir=tmp_path, state_db=tmp_path / "decisions.sqlite")
+    bridge = McpBridge(Snapshot(db, state_dir=tmp_path, config_dir=Path("config")))
+    out = bridge.call("explain_root_cause", {"part_id": "P-HSINK-L"}, ("explain_root_cause",))
+    assert "error" in out  # the part has no shortage; the run must not crash
