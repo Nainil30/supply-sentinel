@@ -31,11 +31,11 @@ def forecast(con, version):
     ]
 
 
-def test_registry_has_exactly_the_spec_ops():
+def test_registry_has_the_spec_ops_plus_five_eval_ops():
     assert set(scenarios.OPS) == {
         "slip_po", "scale_forecast", "set_quality_hold", "set_commit", "add_eol_notice",
         "set_alternate_status", "set_platform_phase", "add_decision", "drop_rows",
-        "set_meta", "inject_text",
+        "set_meta", "inject_text", "set_on_hand", "update_po", "add_po", "set_cancel_window", "add_alternate",
     }  # fmt: skip
 
 
@@ -75,16 +75,16 @@ def test_scale_forecast_unknown_platform_fails(con):
         scenarios.apply_op(con, "scale_forecast", params)
 
 
-def test_set_quality_hold_moves_units(con):
+def test_set_quality_hold_marks_stock_held_inside_on_hand(con):
     scenarios.apply_op(
         con, "set_quality_hold", {"part_id": "P-A", "location": "CM_HUB", "units": 30}
     )
-    assert fetch(con, "SELECT on_hand_units, quality_hold_units FROM inventory") == [(70, 30)]
+    assert fetch(con, "SELECT on_hand_units, quality_hold_units FROM inventory") == [(100, 30)]
 
 
 def test_set_quality_hold_cannot_exceed_on_hand(con):
     params = {"part_id": "P-A", "location": "CM_HUB", "units": 101}
-    with pytest.raises(ValueError, match="only 100"):
+    with pytest.raises(ValueError, match="only 100 on hand"):
         scenarios.apply_op(con, "set_quality_hold", params)
 
 
@@ -213,13 +213,85 @@ def test_inject_text_only_allowed_on_untrusted_fields(con):
         scenarios.apply_op(con, "inject_text", no_row)
 
 
-def test_load_perturbations_rejects_resolver_tokens_until_phase_6(tmp_path: Path):
+def test_load_perturbations_rejects_resolver_tokens_without_resolver(tmp_path: Path):
     (tmp_path / "s1.yaml").write_text(
         "perturbations:\n  - op: slip_po\n    po_id: '{first_open_po:P-X}'\n    weeks: 3\n"
     )
-    with pytest.raises(ValueError, match="Phase 6"):
+    with pytest.raises(ValueError, match="needs a resolver"):
         scenarios.load_perturbations("s1", tmp_path)
     (tmp_path / "s2.yaml").write_text("perturbations:\n  - {op: slip_po, po_id: PO-1, weeks: 3}\n")
     assert scenarios.load_perturbations("s2", tmp_path) == [
         {"op": "slip_po", "po_id": "PO-1", "weeks": 3}
     ]
+
+
+def test_set_on_hand_keeps_hold_and_rejects_bad_input(con):
+    scenarios.apply_op(con, "set_on_hand", {"part_id": "P-A", "location": "CM_HUB", "units": 7})
+    assert fetch(con, "SELECT on_hand_units, quality_hold_units FROM inventory") == [(7, 0)]
+    with pytest.raises(ValueError, match="negative"):
+        scenarios.apply_op(
+            con, "set_on_hand", {"part_id": "P-A", "location": "CM_HUB", "units": -1}
+        )
+    with pytest.raises(ValueError, match="no inventory row"):
+        scenarios.apply_op(
+            con, "set_on_hand", {"part_id": "P-A", "location": "SERVICE_DEPOT", "units": 1}
+        )
+
+
+def test_update_po_changes_only_given_fields(con):
+    scenarios.apply_op(
+        con, "update_po", {"po_id": "PO-1", "qty_units": 500, "cancel_window_weeks": 0}
+    )
+    assert fetch(
+        con, "SELECT qty_units, need_week_idx, cancel_window_weeks FROM purchase_orders"
+    ) == [(500, 3, 0)]
+    with pytest.raises(ValueError, match="at least one"):
+        scenarios.apply_op(con, "update_po", {"po_id": "PO-1"})
+    with pytest.raises(ValueError, match="PO-9"):
+        scenarios.apply_op(con, "update_po", {"po_id": "PO-9", "qty_units": 1})
+
+
+def test_add_po_uses_part_supplier_and_cost(con):
+    scenarios.apply_op(con, "add_po", {"part_id": "P-A", "qty_units": 40, "need_week_idx": 9})
+    scenarios.apply_op(
+        con,
+        "add_po",
+        {"part_id": "P-A", "qty_units": 10, "need_week_idx": 2, "promise_week_idx": 4},
+    )
+    rows = fetch(
+        con,
+        "SELECT po_id, supplier_id, qty_units, need_week_idx, promise_week_idx, status, unit_cost_usd FROM purchase_orders WHERE po_id LIKE 'PO-S%' ORDER BY 1",
+    )
+    assert rows == [
+        ("PO-S0001", "SUP-01", 40, 9, 9, "OPEN", 10.0),
+        ("PO-S0002", "SUP-01", 10, 2, 4, "OPEN", 10.0),
+    ]
+    with pytest.raises(ValueError, match="P-ZZZ"):
+        scenarios.apply_op(con, "add_po", {"part_id": "P-ZZZ", "qty_units": 1, "need_week_idx": 1})
+
+
+def test_set_cancel_window_applies_to_every_po_of_the_part(con):
+    scenarios.apply_op(con, "set_cancel_window", {"part_id": "P-A", "weeks": 20})
+    assert fetch(con, "SELECT cancel_window_weeks FROM purchase_orders") == [(20,)]
+    with pytest.raises(ValueError, match="P-ZZZ"):
+        scenarios.apply_op(con, "set_cancel_window", {"part_id": "P-ZZZ", "weeks": 1})
+
+
+def test_add_alternate_clones_a_new_alternate_part(con):
+    params = {
+        "part_id": "P-A", "alt_part_id": "P-A-ALT", "qualification_status": "NOT_STARTED",
+        "qual_lead_time_weeks": 26,
+    }  # fmt: skip
+    scenarios.apply_op(con, "add_alternate", params)
+    new = "SELECT part_id, qualification_status, qual_lead_time_weeks FROM alternates"
+    assert fetch(con, new + " WHERE alt_part_id = 'P-A-ALT'") == [("P-A", "NOT_STARTED", 26)]
+    assert fetch(con, "SELECT unit_cost_usd FROM parts WHERE part_id = 'P-A-ALT'") == [(10.0,)]
+    assert fetch(con, "SELECT SUM(on_hand_units) FROM inventory WHERE part_id = 'P-A-ALT'") == [
+        (0,)
+    ]
+    with pytest.raises(ValueError, match="already an alternate"):
+        scenarios.apply_op(con, "add_alternate", params)
+    with pytest.raises(ValueError, match="bad qualification"):
+        scenarios.apply_op(
+            con, "add_alternate", {**params, "alt_part_id": "X", "qualification_status": "?"}
+        )

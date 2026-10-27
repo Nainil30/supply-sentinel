@@ -1,0 +1,43 @@
+id: LTB-05
+title: DDR4 end-of-life, no alternate, long-life platforms L4 and M1
+category: ltb
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: add_eol_notice
+  part_id: P-DDR4-8G
+  notice_date: '2026-10-26'
+  ltb_date: '2027-02-15'
+  last_ship_date: '2027-06-30'
+  replacement_part_id: null
+  raw_text: 'Last-time-buy notice: this part is being discontinued. Orders accepted until the LTB date;
+    last shipment as stated. No drop-in replacement is offered.'
+target:
+  part_id: P-DDR4-8G
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - LTB_BUY
+  secondary_action: null
+  quantity:
+    oracle: ltb.order_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GCM
+    - FINANCE
+  must_mention:
+  - re:\$\s?[\d,.]+\s?[kKmM]?|spend|USD
+  must_not:
+    actions:
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: Long service life means a very large buy, far above the $50k second-approver threshold. The planner
+  must quote the spend so the approver sees it.

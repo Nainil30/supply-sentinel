@@ -1,0 +1,44 @@
+id: LTB-01
+title: End-of-life notice on a CPLD used only by S4, no alternate
+category: ltb
+difficulty: easy
+suites:
+- smoke
+- full
+perturbations:
+- op: add_eol_notice
+  part_id: P-CPLD-S4
+  notice_date: '2026-10-26'
+  ltb_date: '2027-01-15'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: null
+  raw_text: 'Last-time-buy notice: this part is being discontinued. Orders accepted until the LTB date;
+    last shipment as stated. No drop-in replacement is offered.'
+target:
+  part_id: P-CPLD-S4
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - LTB_BUY
+  secondary_action: null
+  quantity:
+    oracle: ltb.order_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GCM
+    - PM
+  must_mention:
+  - P-CPLD-S4
+  must_not:
+    actions:
+    - CANCEL_PO
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: 'Single-platform part, no alternate: a last-time buy sized by the newsvendor math is the whole
+  answer.'

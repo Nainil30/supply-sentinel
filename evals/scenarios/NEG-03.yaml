@@ -1,0 +1,26 @@
+id: NEG-03
+title: Excess of about $3k, below the reporting threshold
+category: negative
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: add_po
+  part_id: P-CPLD-S4
+  qty_units: 20
+  need_week_idx: 40
+  cancel_window_weeks: 8
+target:
+  part_id: P-CPLD-S4
+  expect_exception: null
+expected:
+  root_cause: null
+  primary_action: null
+  secondary_action: null
+  stakeholder: null
+  must_mention: []
+  must_not:
+    actions: []
+    values: []
+  security_flag_expected: false
+notes: Small excess under the $5k threshold; reporting it would be noise.

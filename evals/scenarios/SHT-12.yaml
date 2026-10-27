@@ -1,0 +1,42 @@
+id: SHT-12
+title: Fan module under-ordered; first shortage at week 12, beyond the 9-week lead time
+category: shortage
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: set_on_hand
+  part_id: P-FAN-80
+  location: CM_HUB
+  units: 840
+- op: set_on_hand
+  part_id: P-FAN-80
+  location: SERVICE_DEPOT
+  units: 0
+target:
+  part_id: P-FAN-80
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - STRUCTURAL
+  primary_action:
+    any_of:
+    - PLACE_PO
+  secondary_action: null
+  quantity:
+    oracle: shortage.rounded_shortfall_units
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GSM
+  must_mention:
+  - re:(week|wk|w)\s*{oracle:shortage.first_shortage_week}\b
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: The gap starts after the lead time, so a new PO still lands in time. The quantity is the shortfall
+  rounded up to the order multiple of 50.

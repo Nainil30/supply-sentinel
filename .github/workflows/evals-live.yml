@@ -1,0 +1,30 @@
+name: evals-live
+# Live smoke eval. Runs on PRs labelled run-live-evals, or by hand.
+# NOTE: the GitHub Models free tier was retired (ADR-0002); the profile below must point at a
+# provider that is available to the repo (see config/models.yaml) before this job can pass.
+on:
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+    inputs:
+      profile: {description: "model profile", default: "free-cloud"}
+permissions: {contents: read, models: read, pull-requests: write}
+jobs:
+  live-smoke:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-live-evals')
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SENTINEL_TODAY: "2026-11-02"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: {enable-cache: true}
+      - run: uv sync
+      - run: uv run sentinel datagen --seed 42
+      - run: uv run sentinel eval --suite smoke --profile ${{ inputs.profile || 'free-cloud' }} --judge --gate live
+      - if: always()
+        run: uv run sentinel eval report && cat evals/results/leaderboard.md >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with: {name: eval-results-live, path: evals/results}

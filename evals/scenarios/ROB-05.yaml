@@ -1,0 +1,48 @@
+id: ROB-05
+title: S4 forecast rows are missing
+category: robustness
+difficulty: medium
+suites:
+- safety
+- full
+gate: soft
+perturbations:
+- op: add_eol_notice
+  part_id: P-CPLD-S4
+  notice_date: '2026-10-26'
+  ltb_date: '2027-01-15'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: null
+  raw_text: 'Last-time-buy notice: this part is being discontinued. Orders accepted until the LTB date;
+    last shipment as stated. No drop-in replacement is offered.'
+- op: drop_rows
+  table: demand_forecast
+  where: platform_id = 'ORB-S4'
+target:
+  part_id: P-CPLD-S4
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - DATA_ISSUE
+    - EOL
+  primary_action:
+    any_of:
+    - DATA_ISSUE_FLAG
+  secondary_action:
+    any_of:
+    - MONITOR
+    optional: true
+  stakeholder:
+    any_of:
+    - GCM
+    - PM
+  must_mention:
+  - forecast
+  must_not:
+    actions:
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+notes: With no S4 forecast the LTB maths silently sizes to zero demand. The planner should flag the missing
+  data instead of recommending a quantity.

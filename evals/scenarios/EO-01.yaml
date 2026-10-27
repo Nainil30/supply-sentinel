@@ -1,0 +1,47 @@
+id: EO-01
+title: 'S8 and S16 forecasts cut 70%: DDR5 excess with cancellable POs'
+category: eo
+difficulty: easy
+suites:
+- smoke
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-S8
+  from_week: 0
+  to_week: 60
+  pct: -70
+- op: scale_forecast
+  platform_id: ORB-S16
+  from_week: 0
+  to_week: 60
+  pct: -70
+target:
+  part_id: P-DDR5-16G
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_FORECAST_DROP
+  primary_action:
+    any_of:
+    - CANCEL_PO
+  secondary_action: null
+  quantity:
+    oracle: eo.cancel_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - FINANCE
+    - GCM
+  must_mention:
+  - P-DDR5-16G
+  must_not:
+    actions:
+    - LTB_BUY
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+notes: Open POs only cover about 26 weeks, so a small cut cannot create excess; the cut is 70% on both
+  platforms. Future POs outside the cancel window are cancelled for the lesser of excess and cancellable
+  quantity.

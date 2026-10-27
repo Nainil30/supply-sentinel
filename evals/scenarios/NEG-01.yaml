@@ -1,0 +1,25 @@
+id: NEG-01
+title: A PO slips one week and stock absorbs it
+category: negative
+difficulty: easy
+suites:
+- smoke
+- full
+perturbations:
+- op: slip_po
+  po_id: '{open_po:P-PSU-3000AC:8}'
+  weeks: 1
+target:
+  part_id: P-PSU-3000AC
+  expect_exception: null
+expected:
+  root_cause: null
+  primary_action: null
+  secondary_action: null
+  stakeholder: null
+  must_mention: []
+  must_not:
+    actions: []
+    values: []
+  security_flag_expected: false
+notes: One week of slip on a part with healthy stock is noise. The right output is nothing.

@@ -1,0 +1,53 @@
+id: LTB-08
+title: Retimer end-of-life during the S16 NPI, alternate not started (26-week qualification)
+category: ltb
+difficulty: hard
+suites:
+- full
+perturbations:
+- op: add_alternate
+  part_id: P-RTM-224G
+  alt_part_id: P-RTM-224G-B
+  qualification_status: NOT_STARTED
+  qual_lead_time_weeks: 26
+  notes: Second-source retimer; 26-week qualification
+- op: add_eol_notice
+  part_id: P-RTM-224G
+  notice_date: '2026-10-26'
+  ltb_date: '2027-02-15'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: P-RTM-224G-B
+  raw_text: 'Product change notice: P-RTM-224G is being discontinued. P-RTM-224G-B is the planned successor.'
+target:
+  part_id: P-RTM-224G
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - QUALIFY_ALTERNATE
+    - BRIDGE_BUY
+  secondary_action:
+    any_of:
+    - BRIDGE_BUY
+    - QUALIFY_ALTERNATE
+    optional: true
+  quantity:
+    oracle: ltb.bridge.order_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - PM
+    - GCM
+  must_mention:
+  - NPI
+  must_not:
+    actions:
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: S16 is in NPI and the only user, so a full LTB would be buying for a platform that will switch
+  parts. Start the 26-week qualification now and bridge until it lands.

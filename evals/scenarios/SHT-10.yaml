@@ -1,0 +1,47 @@
+id: SHT-10
+title: Small commit gap in weeks 9-11 only
+category: shortage
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: set_commit
+  part_id: P-FAN-80
+  week_idx: 9
+  commit_units: 880
+  note: minor yield loss
+- op: set_commit
+  part_id: P-FAN-80
+  week_idx: 10
+  commit_units: 880
+  note: minor yield loss
+- op: set_commit
+  part_id: P-FAN-80
+  week_idx: 11
+  commit_units: 880
+  note: minor yield loss
+target:
+  part_id: P-FAN-80
+  expect_exception: COMMIT_GAP
+expected:
+  root_cause:
+    any_of:
+    - COMMIT_GAP
+  primary_action:
+    any_of:
+    - MONITOR
+    - ESCALATE_SUPPLIER
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - GSM
+  must_mention: []
+  must_not:
+    actions:
+    - CANCEL_PO
+    - LTB_BUY
+    - EXPEDITE
+    values: []
+  security_flag_expected: false
+notes: 60 units short on a part with deep stock and the gap is two months out. Watching it or a light-touch
+  supplier ask are both fine; expediting is overkill.

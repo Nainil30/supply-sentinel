@@ -60,8 +60,13 @@ def scenario_build(
 ) -> None:
     """Apply a scenario's perturbations to the base snapshot."""
     from supply_sentinel.datagen import scenarios
+    from supply_sentinel.evals import oracle
+    from supply_sentinel.evals import scenario as eval_scenario
 
-    steps = scenarios.load_perturbations(scenario_id, scenario_dir)
+    parts = eval_scenario.base_parts(snapshot_dir / "base.duckdb")
+    steps = scenarios.load_perturbations(
+        scenario_id, scenario_dir, resolver=lambda raw: oracle.resolve(raw, parts)
+    )
     path, report = scenarios.build_scenario(
         scenario_id, steps, snapshot_dir=snapshot_dir, state_db=state_db
     )
@@ -271,10 +276,124 @@ def resume(
     typer.echo(f"Weekly brief: {final.get('brief_path')}")
 
 
-@app.command(name="eval")
-def eval_(suite: str = "smoke", profile: str = "replay") -> None:
-    """Run an eval suite."""
-    _stub("eval", 6)
+eval_app = typer.Typer(
+    help="Run eval suites and build reports.", invoke_without_command=True, no_args_is_help=False
+)
+app.add_typer(eval_app, name="eval")
+RESULTS_HELP = "Where timestamped results files live."
+
+
+@eval_app.callback()
+def eval_(
+    ctx: typer.Context,
+    suite: Annotated[str, typer.Option(help="smoke, safety or full.")] = "smoke",
+    profile: Annotated[str, typer.Option(help="replay, local, free-cloud or premium.")] = "replay",
+    system: Annotated[str, typer.Option(help="agent or rules (the baseline).")] = "agent",
+    scenarios: Annotated[
+        str | None, typer.Option(help="Comma-separated ids; overrides --suite.")
+    ] = None,
+    k: Annotated[int, typer.Option(help="Runs per scenario (for pass^k).")] = 1,
+    record: Annotated[bool, typer.Option(help="Record model responses to cassettes.")] = False,
+    judge: Annotated[bool, typer.Option(help="Score messages with the LLM judge.")] = False,
+    resume: Annotated[Path | None, typer.Option(help="Continue this results file.")] = None,
+    gate: Annotated[
+        str | None, typer.Option(help="Enforce CI gates: replay, live or nightly.")
+    ] = None,
+    scenario_dir: Path = Path("evals/scenarios"),
+    results_dir: Annotated[Path, typer.Option(help=RESULTS_HELP)] = Path("evals/results"),
+) -> None:
+    """Run an eval suite (or a subcommand such as `report`)."""
+    if ctx.invoked_subcommand is not None:
+        return
+    import json
+
+    from supply_sentinel.evals import report, runner
+    from supply_sentinel.evals import scenario as eval_scenario
+
+    try:
+        chosen = eval_scenario.select(
+            eval_scenario.load_all(scenario_dir), suite, scenarios.split(",") if scenarios else None
+        )
+    except (KeyError, FileNotFoundError, ValueError) as exc:
+        typer.echo(f"Cannot select scenarios: {exc}")
+        raise typer.Exit(code=1) from exc
+    if profile == "replay" and system == "agent":
+        # Only scenarios with a recorded cassette can be replayed; say which ones are skipped.
+        have = {p.stem for p in Path("evals/cassettes").glob("*/*.jsonl")}
+        # a scenario that expects no exception on its part never calls the model
+        replayable = {s.id for s in chosen if s.id in have or s.target.expect_exception is None}
+        skipped = [s.id for s in chosen if s.id not in replayable]
+        chosen = [s for s in chosen if s.id in replayable]
+        if skipped:
+            typer.echo(f"No cassette yet for {skipped}; record with `--profile local --record`.")
+    if not chosen:
+        typer.echo(f"No scenarios in suite '{suite}'.")
+        raise typer.Exit(code=1)
+    path = runner.run_suite(
+        chosen, suite=suite, system=system, profile=profile, k=k, record=record, judge=judge,
+        resume=resume, results_dir=results_dir, log=typer.echo,
+    )  # fmt: skip
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    path.with_suffix(".md").write_text(report.run_markdown(path, doc), encoding="utf-8")
+    summary = report.summarize(doc)
+    typer.echo(f"Wrote {path} (pass rate {summary['pass_rate']:.0%} over {summary['runs']} runs)")
+    if gate:
+        baseline_file = results_dir / "baseline_main.json"
+        base = (
+            json.loads(baseline_file.read_text(encoding="utf-8"))
+            if baseline_file.exists()
+            else None
+        )
+        hard, soft = report.check_gates(doc, gate, base)
+        for msg in soft:
+            typer.echo(f"warning: {msg}")
+        for msg in hard:
+            typer.echo(f"GATE FAILED: {msg}")
+        if hard:
+            raise typer.Exit(code=1)
+
+
+@eval_app.command("report")
+def eval_report(
+    results_dir: Annotated[Path, typer.Option(help=RESULTS_HELP)] = Path("evals/results"),
+) -> None:
+    """Write evals/results/leaderboard.md from the results files."""
+    from supply_sentinel.evals import report
+
+    docs = report.load_results(results_dir)
+    if not docs:
+        typer.echo(f"No results files in {results_dir}. Run `sentinel eval` first.")
+        raise typer.Exit(code=1)
+    out = results_dir / "leaderboard.md"
+    out.write_text(report.leaderboard(docs), encoding="utf-8")
+    typer.echo(f"Wrote {out} from {len(docs)} results file(s).")
+
+
+@eval_app.command("calibrate")
+def eval_calibrate(
+    labels: Annotated[Path, typer.Option(help="Labels YAML (human or ai-reference).")] = Path(
+        "evals/reference_labels/comms_labels.yaml"
+    ),
+    profile: Annotated[str, typer.Option(help="Profile whose `judge` role is tested.")] = "local",
+    record: bool = False,
+    out: Path = Path("evals/results/calibration.md"),
+) -> None:
+    """Compare the judge with labelled messages (per-criterion agreement, Cohen's kappa)."""
+    from supply_sentinel.evals import calibration
+    from supply_sentinel.llm.config import load_profile
+    from supply_sentinel.llm.factory import build_router
+    from supply_sentinel.observability.ledger import Ledger
+
+    data = calibration.load_labels(labels)
+    router, model_profile = build_router(profile, "calibration", Ledger(None), record=record)
+    try:
+        result = calibration.calibrate(data, router)
+    except ValueError as exc:
+        typer.echo(str(exc))
+        raise typer.Exit(code=1) from exc
+    model = load_profile(profile).roles["judge"].model if profile != "replay" else "replay"
+    out.write_text(calibration.render_report(result, model), encoding="utf-8")
+    typer.echo(f"kappa {result['kappa']:.2f} over {result['items']} messages; wrote {out}")
 
 
 @app.command(name="serve-mcp")

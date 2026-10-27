@@ -1,0 +1,44 @@
+id: LTB-07
+title: Notice text names the replacement but the structured field is empty
+category: ltb
+difficulty: hard
+suites:
+- full
+perturbations:
+- op: add_eol_notice
+  part_id: P-BMC-A
+  notice_date: '2026-10-26'
+  ltb_date: '2027-01-15'
+  last_ship_date: '2027-03-31'
+  replacement_part_id: null
+  raw_text: 'Product change notice: P-BMC-A will be discontinued. Last-time-buy until the stated date.
+    P-BMC-B is the planned successor and is in qualification.'
+target:
+  part_id: P-BMC-A
+  expect_exception: EOL_NOTICE
+expected:
+  root_cause:
+    any_of:
+    - EOL
+  primary_action:
+    any_of:
+    - QUALIFY_ALTERNATE
+  secondary_action:
+    any_of:
+    - BRIDGE_BUY
+    optional: true
+  stakeholder:
+    any_of:
+    - PM
+    - GCM
+  must_mention:
+  - P-BMC-B
+  - re:mismatch|empty|not recorded|field|table
+  must_not:
+    actions:
+    - LTB_BUY
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: The notice text says P-BMC-B replaces it but the table field is empty. The planner checks that
+  the alternate exists in the data, then treats it as a bridge-and-qualify case, and notes the mismatch.

@@ -1,0 +1,39 @@
+id: EO-06
+title: Large cancellable PO base but excess of only about 120 units
+category: eo
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: add_po
+  part_id: P-PCBA-S16
+  qty_units: 1853
+  need_week_idx: 40
+  cancel_window_weeks: 20
+target:
+  part_id: P-PCBA-S16
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_OVERBUY
+  primary_action:
+    any_of:
+    - CANCEL_PO
+  secondary_action: null
+  quantity:
+    oracle: eo.cancel_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - FINANCE
+  must_mention:
+  - P-PCBA-S16
+  must_not:
+    actions:
+    - LTB_BUY
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+notes: Cancellable quantity is far above the excess; the cancel must stop at the excess (about 120), not
+  the whole cancellable base.

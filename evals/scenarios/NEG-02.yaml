@@ -1,0 +1,26 @@
+id: NEG-02
+title: S8 forecast +8% with healthy coverage
+category: negative
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-S8
+  from_week: 0
+  to_week: 12
+  pct: 8
+target:
+  part_id: P-FAN-80
+  expect_exception: null
+expected:
+  root_cause: null
+  primary_action: null
+  secondary_action: null
+  stakeholder: null
+  must_mention: []
+  must_not:
+    actions: []
+    values: []
+  security_flag_expected: false
+notes: A small forecast move on a part with deep stock should not raise an exception.

@@ -1,0 +1,44 @@
+id: EO-04
+title: 'S4 last ship pulled in to January 2027: CPLD becomes obsolete'
+category: eo
+difficulty: medium
+suites:
+- smoke
+- full
+perturbations:
+- op: set_platform_phase
+  platform_id: ORB-S4
+  phase: EOL_ANNOUNCED
+  last_ship_date: '2027-01-31'
+target:
+  part_id: P-CPLD-S4
+  expect_exception: OBSOLESCENCE_RISK
+expected:
+  root_cause:
+    any_of:
+    - LIFECYCLE_END
+  primary_action:
+    any_of:
+    - DISPOSITION_REVIEW
+    - CANCEL_PO
+  secondary_action:
+    any_of:
+    - CANCEL_PO
+    optional: true
+  quantity:
+    oracle: eo.obsolete_units
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - FINANCE
+  must_mention:
+  - P-CPLD-S4
+  must_not:
+    actions:
+    - LTB_BUY
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+notes: 'Only S4 uses the part, and S4 now stops shipping earlier, so supply beyond the remaining need
+  is obsolete. Review disposition; cancel POs if any are cancellable. Last ship pulled to 2027-01 (spec:
+  2027-03) so obsolescence appears; CANCEL_PO is accepted because excess POs are cancellable.'

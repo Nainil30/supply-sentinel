@@ -1,0 +1,44 @@
+id: SHT-04
+title: S8 forecast jumps 60% in weeks 2-8 and the ASIC lead time is 36 weeks
+category: shortage
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: scale_forecast
+  platform_id: ORB-S8
+  from_week: 2
+  to_week: 8
+  pct: 60
+- op: slip_po
+  po_id: '{open_po:P-ASIC-51T:0}'
+  weeks: -3
+target:
+  part_id: P-ASIC-51T
+  expect_exception: SHORTAGE
+expected:
+  root_cause:
+    any_of:
+    - DEMAND_SPIKE
+  primary_action:
+    any_of:
+    - EXPEDITE
+    - ESCALATE_SUPPLIER
+  secondary_action: null
+  quantity:
+    oracle: shortage.max_shortfall_units
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - GSM
+    - GCM
+  must_mention:
+  - re:(week|wk|w)\s*{oracle:shortage.first_shortage_week}\b
+  must_not:
+    actions:
+    - CANCEL_PO
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+notes: The first PO was pulled back on time so the spike is the cause. Lead time (36 weeks) is far longer
+  than the gap, so a new PO cannot help; expedite or escalate.

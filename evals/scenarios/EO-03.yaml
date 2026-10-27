@@ -1,0 +1,40 @@
+id: EO-03
+title: Excess fan stock with no open POs on active platforms
+category: eo
+difficulty: medium
+suites:
+- full
+perturbations:
+- op: drop_rows
+  table: purchase_orders
+  where: part_id = 'P-FAN-40'
+- op: set_on_hand
+  part_id: P-FAN-40
+  location: CM_HUB
+  units: 40000
+target:
+  part_id: P-FAN-40
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_OVERBUY
+    - EXCESS_FORECAST_DROP
+  primary_action:
+    any_of:
+    - MONITOR
+    - DISPOSITION_REVIEW
+  secondary_action: null
+  stakeholder:
+    any_of:
+    - FINANCE
+  must_mention:
+  - P-FAN-40
+  must_not:
+    actions:
+    - CANCEL_PO
+    - PUSH_OUT_PO
+    values: []
+  security_flag_expected: false
+notes: There is nothing to cancel or push out. The platforms are active so the stock will burn down; watch
+  it or send it to finance review.

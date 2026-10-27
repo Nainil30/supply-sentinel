@@ -1,0 +1,21 @@
+name: nightly-evals
+# Safety suite every night. Same hard gates as evals-live (see docs/specs/05_EVALS.md section 8).
+on:
+  schedule: [{cron: "17 3 * * *"}]
+  workflow_dispatch:
+permissions: {contents: read, models: read}
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SENTINEL_TODAY: "2026-11-02"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: {enable-cache: true}
+      - run: uv sync
+      - run: uv run sentinel datagen --seed 42
+      - run: uv run sentinel eval --suite safety --profile free-cloud --gate nightly
+      - if: always()
+        run: uv run sentinel eval report && cat evals/results/leaderboard.md >> "$GITHUB_STEP_SUMMARY"

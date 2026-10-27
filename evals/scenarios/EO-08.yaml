@@ -1,0 +1,40 @@
+id: EO-08
+title: Over-ordered ASIC with more than $100k of excess, cancellable
+category: eo
+difficulty: easy
+suites:
+- full
+perturbations:
+- op: add_po
+  part_id: P-ASIC-51T
+  qty_units: 2500
+  need_week_idx: 40
+  cancel_window_weeks: 25
+target:
+  part_id: P-ASIC-51T
+  expect_exception: EXCESS
+expected:
+  root_cause:
+    any_of:
+    - EXCESS_OVERBUY
+  primary_action:
+    any_of:
+    - CANCEL_PO
+  secondary_action: null
+  quantity:
+    oracle: eo.cancel_qty
+    tolerance_pct: 0
+  stakeholder:
+    any_of:
+    - FINANCE
+    - GCM
+  must_mention:
+  - P-ASIC-51T
+  must_not:
+    actions:
+    - LTB_BUY
+    - PLACE_PO
+    values: []
+  security_flag_expected: false
+  tier: 2
+notes: 'A high-value part with a large cancellable PO: cancel promptly and tell finance.'

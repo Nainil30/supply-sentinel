@@ -13,4 +13,9 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest -m "not live" --cov=supply_sentinel -q
       - run: uv run sentinel datagen --seed 42 --check-determinism
-      # the replay smoke eval is added in Phase 6.
+      - run: uv run sentinel datagen --seed 42
+      - run: uv run sentinel eval --suite smoke --profile replay --gate replay
+        env: {SENTINEL_TODAY: "2026-11-02"}
+      - run: uv run sentinel eval report
+      - uses: actions/upload-artifact@v4
+        with: {name: eval-results, path: evals/results}
