@@ -116,4 +116,14 @@ def weekly_brief(ctx: RunContext, state: AgentState) -> dict[str, Any]:
     path = ctx.run_dir / "weekly_brief.md"
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     ctx.ledger.log("weekly_brief", path=str(path), summary_ok=summary is not None)
+    outcomes = state.get("outcomes", [])
+    ctx.ledger.log(
+        "run_end",
+        totals={
+            **state.get("budget", {}),
+            "recommendations": len(outcomes),
+            "pending": sum(o["status"] == "PENDING" for o in outcomes),
+            "errors": len(state.get("errors", [])),
+        },
+    )
     return {"brief_path": str(path)}

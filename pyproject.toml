@@ -18,6 +18,10 @@ dependencies = [
   "langchain-core>=1.7",
   "langchain-ollama>=1.1",
   "langchain-openai>=1.7",
+  "streamlit>=1.40",
+  "opentelemetry-sdk>=1.30",
+  "opentelemetry-exporter-otlp-proto-http>=1.30",
+  "openinference-instrumentation-langchain>=0.1.40",
 ]
 
 [project.scripts]

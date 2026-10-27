@@ -206,6 +206,17 @@ def validate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
             grounding=res.grounding.status,
             checked=res.grounding.checked,
         )
+        ctx.ledger.log(
+            "validation",
+            rec_id=rec_id,
+            checks={
+                "grounding": res.grounding.status,
+                "grounded_values": res.grounding.checked,
+                "ungrounded": res.grounding.ungrounded_values,
+                "sanity_flags": [i.message[:120] for i in res.of("sanity")],
+                "tier": tier,
+            },
+        )
     recs += data_issue_recs(ctx, state, len(cands) + 1)
     return {
         "recommendations": [r.model_dump(mode="json") for r in recs],
@@ -291,5 +302,10 @@ def finalize(ctx: RunContext, state: AgentState) -> dict[str, Any]:
                 status = dec.decision
                 _set_status(ctx, rec, dec, status)
         ctx.ledger.log("decision", rec_id=r.rec_id, tier=r.autonomy_tier, status=status)
+        if dec is not None:
+            ctx.ledger.log(
+                "approval", rec_id=r.rec_id, decision=dec.decision, by=dec.decided_by,
+                reason=dec.reason, quantity=dec.quantity, status=status,
+            )  # fmt: skip
         outcomes.append({"rec_id": r.rec_id, "status": status})
     return {"outcomes": outcomes, "errors": [e.model_dump() for e in errors]}

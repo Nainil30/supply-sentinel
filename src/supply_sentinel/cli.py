@@ -1,4 +1,4 @@
-"""`sentinel` command line. Every command is a stub until its phase lands."""
+"""`sentinel` command line."""
 
 import tempfile
 from pathlib import Path
@@ -9,11 +9,6 @@ import typer
 from supply_sentinel.engine.models import ExceptionRecord
 
 app = typer.Typer(help="Supply Sentinel: supply-execution copilot.", no_args_is_help=True)
-
-
-def _stub(name: str, phase: int) -> None:
-    typer.echo(f"'{name}' is not implemented yet (planned for Phase {phase}).")
-    raise typer.Exit(code=1)
 
 
 @app.command()
@@ -411,6 +406,30 @@ def serve_mcp(
 
 
 @app.command()
-def ui() -> None:
-    """Launch the Planner Console."""
-    _stub("ui", 7)
+def ui(
+    snapshot: Annotated[str, typer.Option(help="Snapshot name or .duckdb path.")] = "base",
+    profile: Annotated[str, typer.Option(help="Profile the Run page uses.")] = "replay",
+    cassette: Annotated[str | None, typer.Option(help="Cassette name (default: snapshot).")] = None,
+    state_dir: Annotated[Path, typer.Option(help=STATE_DIR_HELP)] = Path("data/state"),
+    port: int = 8501,
+    hosted: Annotated[bool, typer.Option(help="Hosted demo: replay only.")] = False,
+) -> None:
+    """Launch the Planner Console (Streamlit)."""
+    import os
+    import subprocess
+    import sys
+
+    import supply_sentinel.app as app_pkg
+
+    entry = Path(app_pkg.__file__).parent / "streamlit_app.py"
+    env = {
+        **os.environ,
+        "SENTINEL_DB": str(_snapshot_path(snapshot)),
+        "SENTINEL_STATE_DIR": str(state_dir),
+        "SENTINEL_UI_PROFILE": profile,
+        "SENTINEL_UI_CASSETTE": cassette or "",
+        "SENTINEL_HOSTED": "1" if hosted else "0",
+    }
+    cmd = [sys.executable, "-m", "streamlit", "run", str(entry), "--server.port", str(port),
+           "--browser.gatherUsageStats", "false"]  # fmt: skip
+    raise typer.Exit(code=subprocess.call(cmd, env=env))

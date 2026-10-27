@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import time
 from dataclasses import dataclass
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ from supply_sentinel.agent.skills_loader import SkillLibrary
 from supply_sentinel.llm.factory import build_router
 from supply_sentinel.llm.types import ChatClient
 from supply_sentinel.mcp_server.context import Snapshot
+from supply_sentinel.observability import tracing
 from supply_sentinel.observability.ledger import Ledger
 
 _B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -76,6 +78,7 @@ def open_run(
     if max_exceptions is not None:
         settings["max_exceptions_per_run"] = max_exceptions
     settings.update(settings_override or {})
+    tracing.init_tracing(settings)
     wall = float(
         model_profile.limits.get(
             "specialist_wall_seconds", settings["specialist_limits"]["wall_seconds"]
@@ -138,8 +141,12 @@ def start(
     config_dir: Path = Path("config"),
     skills_dir: Path = Path("skills"),
     client: ChatClient | None = None,
+    on_node: Callable[[str], None] | None = None,
 ) -> tuple[str, list[dict[str, Any]]]:
-    """Run until the approval gate (or the end). Returns (run_id, pending recommendations)."""
+    """Run until the approval gate (or the end). Returns (run_id, pending recommendations).
+
+    `on_node` is called with each graph node's name as it finishes (the UI's progress bar).
+    """
     run_id = new_run_id()
     meta = {
         "snapshot_path": str(snapshot_path), "profile": profile, "cassette": cassette,
@@ -151,10 +158,28 @@ def start(
                  max_exceptions=max_exceptions, config_dir=config_dir, skills_dir=skills_dir,
                  client=client)  # fmt: skip
     try:
-        h.graph.invoke({"run_id": run_id}, h.config)
+        with tracing.run_span(run_id, run_dir(state_dir, run_id), "run"):
+            trace_id = tracing.current_trace_id()
+            h.ctx.ledger.log(
+                "run_start", profile=profile, snapshot=str(snapshot_path), trace_id=trace_id,
+                max_exceptions=max_exceptions, replay=profile == "replay",
+            )  # fmt: skip
+            _drive(h, {"run_id": run_id}, on_node)
+        tracing.flush()
         return run_id, pending(h)
     finally:
         h.close()
+
+
+def _drive(h: RunHandle, first: Any, on_node: Callable[[str], None] | None) -> None:
+    """graph.invoke, or graph.stream when someone wants per-node progress."""
+    if on_node is None:
+        h.graph.invoke(first, h.config)
+        return
+    for update in h.graph.stream(first, h.config, stream_mode="updates"):
+        for node in update:
+            if not node.startswith("__"):
+                on_node(node)
 
 
 def pending(h: RunHandle) -> list[dict[str, Any]]:
@@ -209,7 +234,10 @@ def resume(state_dir: Path, run_id: str, client: ChatClient | None = None) -> di
             staged.get(p["rec_id"], Decision(rec_id=p["rec_id"], decision="DEFERRED")).model_dump()
             for p in pending(h)
         ]
-        h.graph.invoke(Command(resume=answer), h.config)
+        with tracing.run_span(run_id, run_dir(state_dir, run_id), "resume"):
+            h.ctx.ledger.log("run_resume", trace_id=tracing.current_trace_id(), decisions=len(answer))
+            h.graph.invoke(Command(resume=answer), h.config)
+        tracing.flush()
         return dict(h.graph.get_state(h.config).values)
     finally:
         h.close()

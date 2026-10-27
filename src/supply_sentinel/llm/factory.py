@@ -27,16 +27,16 @@ def build_router(
     """`client` lets tests inject a scripted model. Returns the router and the model profile."""
     profile = load_profile(profile_name, config_dir)
     if client is not None:
-        return Router(client, profile.limits, ledger), profile
+        return Router(client, profile.limits, ledger, provider=profile.provider), profile
     if profile.name == "replay":
         source = load_profile(profile.source_profile or "local", config_dir)
         ids = {r: source.role(r).model for r in ROLES if r in source.roles}  # type: ignore[arg-type]
         cassette = CassetteClient(cassette_path(profile, source, cassette_name), ids)
-        return Router(cassette, {}, ledger), source
+        return Router(cassette, {}, ledger, provider=source.provider), source
     live = LiveClient(profile)
     if record:
         ids = {r: profile.role(r).model for r in ROLES if r in profile.roles}  # type: ignore[arg-type]
         path = Path(load_profile("replay", config_dir).cassette_dir) / profile.name
         cassette = CassetteClient(path / f"{cassette_name}.jsonl", ids, inner=live)
-        return Router(cassette, profile.limits, ledger), profile
-    return Router(live, profile.limits, ledger), profile
+        return Router(cassette, profile.limits, ledger, provider=profile.provider), profile
+    return Router(live, profile.limits, ledger, provider=profile.provider), profile
