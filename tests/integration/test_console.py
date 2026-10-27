@@ -153,3 +153,11 @@ def test_replay_run_writes_full_ledger_and_spans(replay_run):
     assert sum(s["name"].startswith("execute_tool") for s in spans) == sum(
         e["event"] == "tool_call" for e in events
     )
+
+
+def test_entry_point_with_navigation_renders_overview(replay_run):
+    entry = Path(app_pkg.__file__).parent / "streamlit_app.py"
+    page("overview", replay_run)  # sets the SENTINEL_* environment
+    at = AppTest.from_file(str(entry), default_timeout=60).run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert at.title[0].value == "Overview"
