@@ -1,0 +1,25 @@
+# Default: replay profile, no keys, no network. `docker compose up` serves the console on :8501.
+services:
+  ui:
+    build: .
+    command: ["ui"]
+    ports: ["8501:8501"]
+    volumes: ["sentinel-data:/app/data"]
+  mcp:
+    build: .
+    command: ["mcp"]
+    ports: ["8765:8765"]
+    volumes: ["sentinel-data:/app/data"]
+    profiles: ["mcp"]
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports: ["6006:6006"]
+    profiles: ["tracing"]
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    profiles: ["local"]
+volumes:
+  sentinel-data:
+  ollama:
