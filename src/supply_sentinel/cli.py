@@ -320,8 +320,10 @@ def eval_(
     if profile == "replay" and system == "agent":
         # Only scenarios with a recorded cassette can be replayed; say which ones are skipped.
         have = {p.stem for p in Path("evals/cassettes").glob("*/*.jsonl")}
-        skipped = [s.id for s in chosen if s.id not in have]
-        chosen = [s for s in chosen if s.id in have]
+        # a scenario that expects no exception on its part never calls the model
+        replayable = {s.id for s in chosen if s.id in have or s.target.expect_exception is None}
+        skipped = [s.id for s in chosen if s.id not in replayable]
+        chosen = [s for s in chosen if s.id in replayable]
         if skipped:
             typer.echo(f"No cassette yet for {skipped}; record with `--profile local --record`.")
     if not chosen:

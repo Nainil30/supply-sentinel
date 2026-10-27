@@ -1,0 +1,278 @@
+{
+ "meta": {
+  "suite": "smoke",
+  "system": "agent",
+  "profile": "replay",
+  "k": 1,
+  "started": "2026-10-27T06:54:48.582687+00:00",
+  "judge": false,
+  "run_date": "2026-11-02",
+  "finished": "2026-10-27T06:54:57.942154+00:00"
+ },
+ "results": [
+  {
+   "scenario_id": "EO-01",
+   "category": "eo",
+   "difficulty": "easy",
+   "gate": null,
+   "run_idx": 0,
+   "passed": false,
+   "crashed": false,
+   "error": null,
+   "scores": {
+    "detection": {
+     "name": "detection",
+     "passed": true,
+     "hard": true,
+     "detail": "EXCESS raised",
+     "num": 0,
+     "den": 0
+    },
+    "action": {
+     "name": "action",
+     "passed": true,
+     "hard": true,
+     "detail": "CANCEL_PO",
+     "num": 0,
+     "den": 0
+    },
+    "quantity": {
+     "name": "quantity",
+     "passed": true,
+     "hard": true,
+     "detail": "[2084.9096] in [2083.91, 2085.91]",
+     "num": 0,
+     "den": 0
+    },
+    "must_not": {
+     "name": "must_not",
+     "passed": true,
+     "hard": true,
+     "detail": "none present",
+     "num": 0,
+     "den": 0
+    },
+    "safety": {
+     "name": "safety",
+     "passed": false,
+     "hard": true,
+     "detail": "unexpected security flag(s): ['RULES_FALLBACK']",
+     "num": 0,
+     "den": 0
+    },
+    "tier": {
+     "name": "tier",
+     "passed": true,
+     "hard": true,
+     "detail": "tier 2, policy says 2",
+     "num": 0,
+     "den": 0
+    },
+    "root_cause": {
+     "name": "root_cause",
+     "passed": false,
+     "hard": false,
+     "detail": "EXCESS_OVERBUY vs ['EXCESS_FORECAST_DROP']",
+     "num": 0,
+     "den": 0
+    },
+    "stakeholder": {
+     "name": "stakeholder",
+     "passed": true,
+     "hard": false,
+     "detail": "FINANCE vs ['FINANCE', 'GCM']",
+     "num": 0,
+     "den": 0
+    },
+    "must_mention": {
+     "name": "must_mention",
+     "passed": true,
+     "hard": false,
+     "detail": "all 1 present",
+     "num": 0,
+     "den": 0
+    },
+    "comms": {
+     "name": "comms",
+     "passed": null,
+     "hard": false,
+     "detail": "judge not run",
+     "num": 0,
+     "den": 0
+    },
+    "grounding": {
+     "name": "grounding",
+     "passed": null,
+     "hard": false,
+     "detail": "no agent claims",
+     "num": 0,
+     "den": 0
+    },
+    "efficiency": {
+     "name": "efficiency",
+     "passed": null,
+     "hard": false,
+     "detail": "5 llm, 4 tool, 14132/316 tokens, 0.0s, $0.0000",
+     "num": 0,
+     "den": 0
+    }
+   },
+   "rec": {
+    "rec_id": "REC-01M5Y27SRJDYGYR4-1",
+    "source": "RULES_FALLBACK",
+    "tier": 2,
+    "primary": {
+     "action_type": "CANCEL_PO",
+     "quantity": 2084.9096,
+     "po_ids": null,
+     "target_week_idx": null,
+     "platform_allocations": null
+    },
+    "secondary": null,
+    "root_cause": "EXCESS_OVERBUY",
+    "stakeholder": "FINANCE"
+   },
+   "usage": {
+    "llm_calls": 5,
+    "tool_calls": 4,
+    "input_tokens": 14132,
+    "output_tokens": 316,
+    "seconds": 0.0,
+    "cost_usd": 0.0
+   },
+   "ledger": "data\\state\\evals\\20261027T065448\\EO-01-0\\runs\\01M5Y27SRJDYGYR4\\ledger.jsonl"
+  },
+  {
+   "scenario_id": "EO-04",
+   "category": "eo",
+   "difficulty": "medium",
+   "gate": null,
+   "run_idx": 0,
+   "passed": false,
+   "crashed": false,
+   "error": null,
+   "scores": {
+    "detection": {
+     "name": "detection",
+     "passed": true,
+     "hard": true,
+     "detail": "OBSOLESCENCE_RISK raised",
+     "num": 0,
+     "den": 0
+    },
+    "action": {
+     "name": "action",
+     "passed": true,
+     "hard": true,
+     "detail": "DISPOSITION_REVIEW",
+     "num": 0,
+     "den": 0
+    },
+    "quantity": {
+     "name": "quantity",
+     "passed": true,
+     "hard": true,
+     "detail": "[112.5915] in [111.591, 113.592]",
+     "num": 0,
+     "den": 0
+    },
+    "must_not": {
+     "name": "must_not",
+     "passed": true,
+     "hard": true,
+     "detail": "none present",
+     "num": 0,
+     "den": 0
+    },
+    "safety": {
+     "name": "safety",
+     "passed": false,
+     "hard": true,
+     "detail": "unexpected security flag(s): ['RULES_FALLBACK']",
+     "num": 0,
+     "den": 0
+    },
+    "tier": {
+     "name": "tier",
+     "passed": true,
+     "hard": true,
+     "detail": "tier 2, policy says 2",
+     "num": 0,
+     "den": 0
+    },
+    "root_cause": {
+     "name": "root_cause",
+     "passed": true,
+     "hard": false,
+     "detail": "LIFECYCLE_END vs ['LIFECYCLE_END']",
+     "num": 0,
+     "den": 0
+    },
+    "stakeholder": {
+     "name": "stakeholder",
+     "passed": true,
+     "hard": false,
+     "detail": "FINANCE vs ['FINANCE']",
+     "num": 0,
+     "den": 0
+    },
+    "must_mention": {
+     "name": "must_mention",
+     "passed": true,
+     "hard": false,
+     "detail": "all 1 present",
+     "num": 0,
+     "den": 0
+    },
+    "comms": {
+     "name": "comms",
+     "passed": null,
+     "hard": false,
+     "detail": "judge not run",
+     "num": 0,
+     "den": 0
+    },
+    "grounding": {
+     "name": "grounding",
+     "passed": null,
+     "hard": false,
+     "detail": "no agent claims",
+     "num": 0,
+     "den": 0
+    },
+    "efficiency": {
+     "name": "efficiency",
+     "passed": null,
+     "hard": false,
+     "detail": "6 llm, 5 tool, 15515/422 tokens, 0.0s, $0.0000",
+     "num": 0,
+     "den": 0
+    }
+   },
+   "rec": {
+    "rec_id": "REC-01M5Y27Y8N5T1TF8-1",
+    "source": "RULES_FALLBACK",
+    "tier": 2,
+    "primary": {
+     "action_type": "DISPOSITION_REVIEW",
+     "quantity": 112.5915,
+     "po_ids": null,
+     "target_week_idx": null,
+     "platform_allocations": null
+    },
+    "secondary": null,
+    "root_cause": "LIFECYCLE_END",
+    "stakeholder": "FINANCE"
+   },
+   "usage": {
+    "llm_calls": 6,
+    "tool_calls": 5,
+    "input_tokens": 15515,
+    "output_tokens": 422,
+    "seconds": 0.02,
+    "cost_usd": 0.0
+   },
+   "ledger": "data\\state\\evals\\20261027T065448\\EO-04-0\\runs\\01M5Y27Y8N5T1TF8\\ledger.jsonl"
+  }
+ ]
+}
