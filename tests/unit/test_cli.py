@@ -16,7 +16,7 @@ def test_help_lists_all_commands() -> None:
 
 
 def test_stub_exits_nonzero() -> None:
-    result = CliRunner().invoke(app, ["run"])
+    result = CliRunner().invoke(app, ["eval"])
     assert result.exit_code == 1
 
 
