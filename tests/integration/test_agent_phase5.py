@@ -75,7 +75,7 @@ def ltb_responder(role: Role, messages: list[Msg], tools) -> LLMResponse:
             {"tool_call_id": "tc1", "field_path": "result.sizing.order_qty_units", "value": 145400}
         ],
         "confidence": "MEDIUM",
-        "stakeholder": "FINANCE",
+        "stakeholder": "GCM",
         "draft_message": "Please approve a last-time buy of 145,400 units.",
     }
     return text(json.dumps(draft))

@@ -26,16 +26,25 @@ ALLOWED_TOOLS = ("get_part_position", "get_open_pos", "simulate_scenario")
 GUIDE = """Two specialists disagree about one part. Protect shipments first: never cancel or push out supply that the shortage window needs. Cancel or push out only quantity beyond that need. Use simulate_scenario to test the combined plan before you propose it. The consolidated recommendation may use an action from either specialist."""
 
 
-def directions(recs: list[dict[str, Any]]) -> dict[str, set[str]]:
-    """part_id -> rec_ids, only for parts that have both an increase and a decrease action."""
+def _kinds(rec: dict[str, Any]) -> set[ActionType]:
+    acts = [rec["primary_action"], rec.get("secondary_action")]
+    return {ActionType(a["action_type"]) for a in acts if a}
+
+
+def directions(recs: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """part_id -> [increase rec_id, decrease rec_id], first pair only.
+
+    Neutral recommendations (escalate, monitor, data issue) are never part of a conflict.
+    """
     by_part: dict[str, list[dict[str, Any]]] = {}
     for r in recs:
         by_part.setdefault(r["part_id"], []).append(r)
-    conflicts: dict[str, set[str]] = {}
+    conflicts: dict[str, list[str]] = {}
     for part, group in by_part.items():
-        kinds = {ActionType(r["primary_action"]["action_type"]) for r in group}
-        if kinds & INCREASE and kinds & DECREASE:
-            conflicts[part] = {r["rec_id"] for r in group}
+        inc = [r for r in group if _kinds(r) & INCREASE and not _kinds(r) & DECREASE]
+        dec = [r for r in group if _kinds(r) & DECREASE and not _kinds(r) & INCREASE]
+        if inc and dec:
+            conflicts[part] = [inc[0]["rec_id"], dec[0]["rec_id"]]
     return conflicts
 
 

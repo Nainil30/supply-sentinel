@@ -47,7 +47,7 @@ def draft(**kw) -> RecommendationDraft:
         "root_cause": "EOL",
         "root_cause_explanation": "The supplier ends production soon.",
         "baseline_agreement": "AGREE",
-        "stakeholder": "FINANCE",
+        "stakeholder": "GCM",
         "draft_message": "Please approve the buy.",
         **kw,
     }
@@ -62,7 +62,7 @@ LTB_LOG = {
     "tc1": {
         "result": {
             "sizing": {"net_units": 145318, "gross_units": 167521, "order_qty_units": 145400},
-            "bridge": {"order_qty_units": 20000, "alt_part_id": "P-Y"},
+            "bridge": {"sizing": {"order_qty_units": 20000}, "alt_part_id": "P-Y"},
         }
     }
 }
@@ -97,7 +97,11 @@ def test_ltb_3_bridge_buy_plus_qualify_alternate_is_allowed():
         primary_action={"action_type": "BRIDGE_BUY", "quantity": 20000},
         secondary_action={"action_type": "QUALIFY_ALTERNATE"},
         evidence=[
-            {"tool_call_id": "tc1", "field_path": "result.bridge.order_qty_units", "value": 20000}
+            {
+                "tool_call_id": "tc1",
+                "field_path": "result.bridge.sizing.order_qty_units",
+                "value": 20000,
+            }
         ],
         draft_message="Bridge buy 20,000 units while P-Y qualifies.",
     )
@@ -146,19 +150,30 @@ def test_eo_3_a_buying_action_is_not_allowed_on_excess():
     assert any("not allowed for EXCESS" in i.message for i in res.of("policy"))
 
 
+def test_eo_4_non_cancellable_po_cannot_be_cancelled():
+    d = draft(
+        primary_action={"action_type": "CANCEL_PO", "po_ids": ["PO-20002"]},
+        root_cause="EXCESS_OVERBUY",
+    )
+    res = validate_draft(d, card(EXS_EXC), EO_LOG, POLICY)
+    assert any("not cancellable" in i.message for i in res.of("policy"))
+
+
 def rec(rec_id: str, part: str, action: str) -> dict:
     return {"rec_id": rec_id, "part_id": part, "primary_action": {"action_type": action}}
 
 
 def test_reconciler_1_pull_in_versus_push_out_is_a_conflict():
     recs = [rec("R1", "P-X", "PULL_IN_PO"), rec("R2", "P-X", "PUSH_OUT_PO")]
-    assert reconciler.directions(recs) == {"P-X": {"R1", "R2"}}
+    assert reconciler.directions(recs) == {"P-X": ["R1", "R2"]}
 
 
 def test_reconciler_2_same_direction_or_different_parts_are_not_conflicts():
     same = [rec("R1", "P-X", "PULL_IN_PO"), rec("R2", "P-X", "LTB_BUY")]
     apart = [rec("R1", "P-X", "PULL_IN_PO"), rec("R2", "P-Y", "CANCEL_PO")]
     neutral = [rec("R1", "P-X", "ESCALATE_SUPPLIER"), rec("R2", "P-X", "CANCEL_PO")]
+    three = [*same[:1], rec("R2", "P-X", "PUSH_OUT_PO"), rec("R3", "P-X", "DATA_ISSUE_FLAG")]
+    assert reconciler.directions(three) == {"P-X": ["R1", "R2"]}  # neutral rec left alone
     assert not reconciler.directions(same)
     assert not reconciler.directions(apart)
     assert not reconciler.directions(neutral)
@@ -169,19 +184,19 @@ def test_reconciler_3_consolidated_plan_may_mix_actions_of_both_types():
 
     shortage = ExceptionRecord(
         exception_id="EXC-SHT-P-X", type=ExceptionType.SHORTAGE, part_id="P-X",
-        severity=Severity.P1, max_shortfall_units=1049.0,
+        severity=Severity.P1, max_shortfall_units=1000.0,
     )  # fmt: skip
     d = draft(
-        primary_action={"action_type": "PULL_IN_PO", "quantity": 1049, "po_ids": ["PO-20001"]},
+        primary_action={"action_type": "PULL_IN_PO", "quantity": 1000, "po_ids": ["PO-20001"]},
         secondary_action={"action_type": "PUSH_OUT_PO", "po_ids": ["PO-20002"]},
         root_cause="SUPPLIER_SLIP",
         baseline_agreement="DEVIATE",
         deviation_reason="Keep the shortage fixed first, then push out the later PO.",
         alternatives_considered=[{"action_type": "CANCEL_PO", "why_not": "supply is needed"}],
-        evidence=[{"tool_call_id": "r1", "field_path": "primary_action.quantity", "value": 1049}],
-        draft_message="Pull in PO-20001 by 1,049 units and push out PO-20002.",
+        evidence=[{"tool_call_id": "r1", "field_path": "primary_action.quantity", "value": 1000}],
+        draft_message="Pull in PO-20001 by 1,000 units and push out PO-20002.",
     )
-    log = {"r1": {"primary_action": {"quantity": 1049}}, "tc1": EO_LOG["tc1"]}
+    log = {"r1": {"primary_action": {"quantity": 1000}}, "tc1": EO_LOG["tc1"]}
     plain = validate_draft(d, card(shortage), log, POLICY)
     assert any("PUSH_OUT_PO is not allowed for SHORTAGE" in i.message for i in plain.of("policy"))
     union = sorted({*POLICY.allowed_actions["SHORTAGE"], *POLICY.allowed_actions["EXCESS"]})

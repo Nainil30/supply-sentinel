@@ -89,11 +89,10 @@ def reconcile(ctx: RunContext, state: AgentState) -> dict[str, Any]:
     out = list(recs)
     errors: list[dict[str, Any]] = []
     for part, ids in sorted(conflicts.items()):
-        group = sorted((r for r in recs if r["rec_id"] in ids), key=lambda r: r["rec_id"])
-        ctx.ledger.log("reconcile_start", part_id=part, recs=[r["rec_id"] for r in group])
-        merged, why = None, "more than two recommendations on one part"
-        if len(group) == 2:
-            merged, why = _consolidate(ctx, cards, group[0], group[1], f"{group[0]['rec_id']}R")
+        by_id = {r["rec_id"]: r for r in recs}
+        group = [by_id[i] for i in ids]  # [increase rec, decrease rec]
+        ctx.ledger.log("reconcile_start", part_id=part, recs=ids)
+        merged, why = _consolidate(ctx, cards, group[0], group[1], f"{group[0]['rec_id']}R")
         if merged is not None:
             out = [r for r in out if r["rec_id"] not in ids] + [merged]
             ctx.ledger.log("reconciled", part_id=part, rec_id=merged["rec_id"])
