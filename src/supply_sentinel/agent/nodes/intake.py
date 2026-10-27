@@ -5,8 +5,9 @@ from datetime import date
 from typing import Any
 
 from supply_sentinel.agent.models import ExceptionCard
+from supply_sentinel.agent.nodes.extract import extract_mismatches
 from supply_sentinel.agent.runtime import RunContext
-from supply_sentinel.agent.specialists import shortage
+from supply_sentinel.agent.specialists import eo, ltb, shortage
 from supply_sentinel.agent.state import AgentState
 from supply_sentinel.engine import rules_baseline
 from supply_sentinel.engine.models import SecurityFlag, Severity
@@ -35,7 +36,7 @@ def load_snapshot(ctx: RunContext, state: AgentState) -> dict[str, Any]:
 
 
 def ingest_documents(ctx: RunContext, state: AgentState) -> dict[str, Any]:
-    """Scan supplier notes and EOL notice text for injection patterns. No extractor yet (Phase 5).
+    """Scan supplier notes and EOL notice text for injection patterns, then run the extractor.
 
     A flag's `field` starts with the part id so later nodes can attach it to the right exception.
     """
@@ -61,7 +62,8 @@ def ingest_documents(ctx: RunContext, state: AgentState) -> dict[str, Any]:
                     ).model_dump()
                 )
     ctx.ledger.log("ingest_documents", parts=len(parts), flags=len(flags))
-    return {"security_flags": flags}
+    issues = extract_mismatches(ctx, state.get("cards", []))
+    return {"security_flags": flags, "data_issues": issues}
 
 
 def detect_exceptions(ctx: RunContext, state: AgentState) -> dict[str, Any]:
@@ -88,7 +90,8 @@ def prioritize(ctx: RunContext, state: AgentState) -> dict[str, Any]:
         state.get("cards", []),
         key=lambda c: (SEVERITY_RANK[Severity(c["exception"]["severity"])], -_impact(c)),
     )[: int(ctx.settings["max_exceptions_per_run"])]
-    queue = [c for c in cards if c["exception"]["type"] in shortage.HANDLES]
-    deferred = [c for c in cards if c["exception"]["type"] not in shortage.HANDLES]
+    handled = (*shortage.HANDLES, *ltb.HANDLES, *eo.HANDLES)
+    queue = [c for c in cards if c["exception"]["type"] in handled]
+    deferred = [c for c in cards if c["exception"]["type"] not in handled]
     ctx.ledger.log("prioritize", queued=len(queue), deferred=len(deferred))
     return {"queue": queue, "deferred": deferred}

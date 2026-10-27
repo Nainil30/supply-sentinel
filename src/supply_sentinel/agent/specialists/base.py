@@ -117,12 +117,50 @@ def _flags_from(name: str, args: dict[str, Any], out: Any) -> list[SecurityFlag]
     return found
 
 
-def run_specialist(ctx: RunContext, card: ExceptionCard, skill: str, name: str) -> Candidate:
+def history_text(ctx: RunContext, cand: Candidate, allowed: tuple[str, ...]) -> str:
+    """Harness-side decision-history lookup (long-term memory). Empty when there is none.
+
+    The result is stored in the tool log as evidence id "history" so the model can cite it.
+    """
+    if "get_decision_history" not in allowed:
+        return ""
+    out = _run_tool(ctx, ToolCall(id="history", name="get_decision_history",
+                                  args={"part_id": cand.part_id, "limit": 3}), allowed)  # fmt: skip
+    rows = out.get("decisions") if isinstance(out, dict) else None
+    if not rows:
+        return ""
+    cand.tool_log["history"] = out
+    slim = [
+        {k: r.get(k) for k in ("action_type", "quantity", "status", "rationale") if r.get(k)}
+        for r in rows
+    ]
+    return (
+        f'Earlier decisions on this part (evidence id "history", newest first): '
+        f"{json.dumps(slim, separators=(',', ':'))}\n"
+        "Do not repeat an action a planner already rejected without a new reason.\n"
+    )
+
+
+def run_specialist(
+    ctx: RunContext,
+    card: ExceptionCard,
+    skill: str | None,
+    name: str,
+    *,
+    user_text: str | None = None,
+    allowed: tuple[str, ...] | None = None,
+    skill_body: str | None = None,
+    extra_log: dict[str, Any] | None = None,
+) -> Candidate:
+    """Run the loop. Specialists pass only `skill`; the reconciler passes its own text and tools."""
     cand = Candidate(exception_id=card.exception_id, part_id=card.part_id)
     cand.tool_log = baseline_log(card)
+    cand.tool_log.update(extra_log or {})
     limits = ctx.settings["specialist_limits"]
     max_calls, max_idle = int(limits["max_tool_calls"]), int(limits["max_idle_turns"])
-    allowed = ctx.skills.allowed_tools(skill)
+    if allowed is None:
+        assert skill is not None
+        allowed = ctx.skills.allowed_tools(skill)
     tools = ctx.bridge.tool_schemas(allowed)
     usage = cand.usage
     t0 = time.monotonic()
@@ -132,17 +170,27 @@ def run_specialist(ctx: RunContext, card: ExceptionCard, skill: str, name: str) 
             name=name,
             max_calls=max_calls,
             index=ctx.skills.index_text(),
-            skill=skill,
-            body=ctx.skills.body(skill),
+            skill=skill or name,
+            body=skill_body if skill_body is not None else ctx.skills.body(str(skill)),
         )
     except SkillError as exc:
         cand.failure = str(exc)
         return cand
-    messages = [Msg(role="system", content=system), Msg(role="user", content=card_text(card))]
+    try:
+        ctx.charge("tool")
+        history = "" if user_text else history_text(ctx, cand, allowed)
+    except ProviderError as exc:
+        cand.failure = str(exc)
+        return cand
+    messages = [
+        Msg(role="system", content=system),
+        Msg(role="user", content=user_text or history + card_text(card)),
+    ]
 
     def call(tag: str, with_tools: bool) -> LLMResponse:
         if time.monotonic() - t0 > ctx.wall_seconds:
             raise ProviderError(f"specialist wall time over {ctx.wall_seconds:.0f}s")
+        ctx.charge("llm")
         est = context.fit(messages, tools if with_tools else [])
         resp = ctx.router.complete(
             "specialist",
@@ -214,6 +262,7 @@ def _investigate(
         messages.append(Msg(role="assistant", content="", tool_calls=calls))
         for c in calls:
             cand.usage.tool_calls += 1
+            ctx.charge("tool")
             out = _run_tool(ctx, c, allowed)
             cand.tool_log[c.id] = out
             cand.security_flags.extend(_flags_from(c.name, c.args, out))
@@ -268,6 +317,7 @@ def repair_draft(
             "reply with the corrected JSON object only.",
         )
     )
+    ctx.charge("llm")
     est = context.fit(messages, [])
     resp = ctx.router.complete(
         "specialist", messages, [], tag=f"{card.exception_id}:repair", est_input_tokens=est

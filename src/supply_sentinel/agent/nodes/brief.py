@@ -83,7 +83,7 @@ def weekly_brief(ctx: RunContext, state: AgentState) -> dict[str, Any]:
             }
         )  # fmt: skip
     facts = {"as_of_date": state["as_of_date"], "recommendations": rows,
-             "exceptions_not_yet_investigated": len(deferred)}  # fmt: skip
+             "exceptions_without_specialist": len(deferred)}  # fmt: skip
     summary, note = _summary(ctx, facts) if rows else ("No exceptions needed a specialist.", "")
 
     lines = [f"# Weekly supply brief - as of {state['as_of_date']}", "",
@@ -103,7 +103,7 @@ def weekly_brief(ctx: RunContext, state: AgentState) -> dict[str, Any]:
         for r in flagged:
             lines.append(f"- {r['rec_id']}: " + ", ".join(f["kind"] for f in r["security_flags"]))
     if deferred:
-        lines += ["", "## Not yet investigated by an agent specialist (rules baseline only)", ""]
+        lines += ["", "## Not covered by any specialist (rules baseline only)", ""]
         for c in deferred:
             a = c.baseline.primary_action
             q = "" if a.quantity is None else f" x {a.quantity:,.0f}"

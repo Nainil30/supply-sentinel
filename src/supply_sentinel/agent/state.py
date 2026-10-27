@@ -14,10 +14,11 @@ class AgentState(TypedDict, total=False):
     stale: bool
     cards: list[dict[str, Any]]  # ExceptionCard dumps, all detected exceptions
     queue: list[dict[str, Any]]  # cards routed to a specialist this run, in priority order
-    deferred: list[dict[str, Any]]  # cards with no specialist wired yet (baseline only)
+    deferred: list[dict[str, Any]]  # cards no specialist handles (baseline only)
     security_flags: Annotated[
         list[dict[str, Any]], add
     ]  # from ingestion; field starts with part id
+    data_issues: list[dict[str, Any]]  # extractor mismatches: notice text vs table
     candidates: Annotated[list[dict[str, Any]], add]  # Candidate dumps from the fan-out
     recommendations: list[dict[str, Any]]  # validated Recommendation dumps
     decisions: list[dict[str, Any]]  # Decision dumps from the approval gate

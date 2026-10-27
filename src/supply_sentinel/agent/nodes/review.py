@@ -7,17 +7,23 @@ from typing import Any
 from langgraph.types import interrupt
 
 from supply_sentinel.agent.models import Candidate, Decision, ExceptionCard, NodeError
-from supply_sentinel.agent.policy import action_value_usd
+from supply_sentinel.agent.policy import Policy, action_value_usd
 from supply_sentinel.agent.runtime import RunContext
 from supply_sentinel.agent.specialists.base import repair_draft
 from supply_sentinel.agent.state import AgentState
 from supply_sentinel.agent.validate import ValidationResult, validate_draft
 from supply_sentinel.datagen.decisions import connect
 from supply_sentinel.engine.models import (
+    ActionItem,
+    ActionType,
+    Confidence,
+    EvidenceRef,
     Grounding,
     Recommendation,
+    RecRootCause,
     RecSource,
     SecurityFlag,
+    Stakeholder,
 )
 from supply_sentinel.llm.types import ProviderError
 
@@ -49,19 +55,56 @@ def _fallback(
 
 
 def _validated(
-    ctx: RunContext, card: ExceptionCard, cand: Candidate
+    ctx: RunContext, card: ExceptionCard, cand: Candidate, policy: Policy | None = None
 ) -> tuple[ValidationResult | None, str]:
     """Validate, with one repair call. Returns (result or None if no draft, reason if none)."""
     assert cand.draft is not None
-    res = validate_draft(cand.draft, card, cand.tool_log, ctx.policy)
+    res = validate_draft(cand.draft, card, cand.tool_log, policy or ctx.policy)
     if not res.ok:
         ctx.ledger.log("validation_failed", exception_id=card.exception_id, issues=res.describe())
         try:
             cand.draft = repair_draft(ctx, card, cand, cand.draft, res.describe())
         except (ValueError, ProviderError) as exc:
             return res, f"repair failed: {exc}"
-        res = validate_draft(cand.draft, card, cand.tool_log, ctx.policy)
+        res = validate_draft(cand.draft, card, cand.tool_log, policy or ctx.policy)
     return res, ""
+
+
+def data_issue_recs(ctx: RunContext, state: AgentState, first_n: int) -> list[Recommendation]:
+    """Extractor mismatches become tier-0 DATA_ISSUE_FLAG recommendations (record only)."""
+    recs: list[Recommendation] = []
+    for i, issue in enumerate(state.get("data_issues", []), start=first_n):
+        field, text_v, table_v = issue["field"], issue["text_value"], issue["table_value"]
+        action = ActionItem(action_type=ActionType.DATA_ISSUE_FLAG)
+        flags = _part_flags(state, issue["part_id"])
+        recs.append(
+            Recommendation(
+                rec_id=f"REC-{ctx.run_id}-{i}",
+                exception_id=issue["exception_id"],
+                part_id=issue["part_id"],
+                source=RecSource.AGENT,
+                primary_action=action,
+                root_cause=RecRootCause.DATA_ISSUE,
+                root_cause_explanation=(
+                    f"The notice text states {field} = {text_v} but the EOL table says {table_v}."
+                ),
+                evidence=[
+                    EvidenceRef(tool_call_id="extractor", field_path=field, value=str(text_v)),
+                    EvidenceRef(tool_call_id="eol_notices", field_path=field, value=str(table_v)),
+                ],
+                risks=["The LTB date drives the buy size; confirm the right one first."],
+                confidence=Confidence.MEDIUM,
+                stakeholder=Stakeholder.GSM,
+                draft_message=(
+                    f"The EOL notice for {issue['part_id']} and our record disagree on {field}: "
+                    f"notice says {text_v}, record says {table_v}. Please confirm with the supplier."
+                ),
+                autonomy_tier=ctx.policy.assign_tier(action, flags=flags),
+                security_flags=flags,
+                grounding=Grounding(status="NOT_CHECKED"),
+            )
+        )
+    return recs
 
 
 def validate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
@@ -132,6 +175,7 @@ def validate(ctx: RunContext, state: AgentState) -> dict[str, Any]:
             grounding=res.grounding.status,
             checked=res.grounding.checked,
         )
+    recs += data_issue_recs(ctx, state, len(cands) + 1)
     return {
         "recommendations": [r.model_dump(mode="json") for r in recs],
         "errors": [e.model_dump() for e in errors],
