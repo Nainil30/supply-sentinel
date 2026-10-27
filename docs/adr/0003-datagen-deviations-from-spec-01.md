@@ -16,7 +16,7 @@ Spec 01 leaves a few details open or conflicts slightly with how DuckDB and the 
 4. **`set_platform_phase` also deletes forecast buckets that start after the new last-ship date**, so the lifecycle-sanity rule still holds.
 5. **`scale_forecast` `pct` is a percent change** (30 means x1.30). Monthly buckets are scaled when they overlap the week range.
 6. **BOM `effective_to` is NULL** for every line: ORB-L1 is past last ship but its BOM still drives spares through EOSL.
-7. **Demand details the spec leaves open:** S8 grows +0.5%/wk for 52 weeks then flat; every platform tapers to 40% over its last 13 weeks; history noise is rescaled to mean one so forecast bias is the only systematic error; `created_at` is fixed to the as-of date for byte-stable output.
+7. **Demand details the spec leaves open:** S8 grows +0.5%/wk for 52 weeks then flat; every platform except S4 (which already declines to 20) tapers to 40% over its last 13 weeks; history noise is rescaled to mean one so forecast bias is the only systematic error; `created_at` is fixed to the as-of date for byte-stable output.
 8. **Realism fixes from review:** ORB-L1 has production history until its last ship (forecast stays zero); ORB-S16 forecast accuracy is a designed NPI profile (MAPE 25/30/40% by lag) because it has under 26 weeks of history; PO slips are stratified per supplier so worse OTD means more slips; L4/L1 use a QSFP28 cage.
 9. Scenario files may not use resolver tokens (`{first_open_po:...}`) until Phase 6; the loader raises a clear error.
 
