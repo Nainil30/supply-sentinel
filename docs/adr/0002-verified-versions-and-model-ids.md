@@ -26,3 +26,12 @@ Spec 06 assumed the GitHub Models free tier. Phase 0 verifies libraries and prov
 ## Consequences
 
 Premium (BYO key) stays optional. Watch for a new free hosted tier; adopting one needs a new ADR.
+
+## Phase 3 addendum: MCP transport and auth
+
+- Server built with `mcp.server.MCPServer` (mcp 2.3.0). Tools are plain functions bound to one `Snapshot`; the `snap` parameter is hidden from the tool schema so a model cannot pick its data source.
+- Transports: `stdio` (default, local hosts) and Streamable HTTP via `streamable_http_app()` served by uvicorn at `/mcp`, bound to `127.0.0.1`.
+- Auth: no OAuth in v1. Optional static bearer token from `SENTINEL_MCP_TOKEN`, checked by a small Starlette middleware (401 otherwise). Not meant for the open internet.
+- Errors: `ToolInputError` subclasses the SDK `ToolError` and `ResourceError`, so its message (with a fix hint) reaches the model. Other exceptions are reported as a generic failure.
+- SDK note: `ToolAnnotations` fields are snake_case (`read_only_hint`), not the camelCase names in the spec text. `langchain-mcp-adapters` still cannot be used (needs `mcp<2`).
+- The Inspector (Node, via npx) was not run by the autopilot because it downloads a package; the command is in `docs/HOSTS.md`.
