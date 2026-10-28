@@ -49,4 +49,14 @@ No label, `expected:` block, gate, threshold or baseline was changed (`evals/CHA
 
 ## What I learned
 
-<!-- owner writes this -->
+**The first failure was the budget, not the model.** Every local run came back as `RULES_FALLBACK`, and I assumed qwen3:8b couldn't produce the JSON shape. The ledger said otherwise: five turns took 989 s against a 900 s wall limit, so the final answer was never requested. Reserving time for the final call and binding it to the draft schema took the re-tested scenarios from 0/3 to 2/3, all answered by the agent. Next time I read the timings before blaming the model.
+
+**A fallback hides failures.** The rules fallback kept every run "working", so the agent's smoke score looked like a weak model rather than a model that never got to answer. Flagging the fallback (`RULES_FALLBACK` as a visible source and a safety-scorer failure) is what made the cluster obvious. Graceful degradation needs to be loud in evals.
+
+**The baseline is the bar.** On this hardware the agent doesn't yet beat a deterministic rules baseline (42% smoke, 57% full for rules). Writing that in the README was uncomfortable, but it turns "an agent" into a claim I can test. SHT-05 is now a real reasoning miss (expedite instead of allocate), which is the kind of failure worth studying.
+
+**Free inference is a moving target.** GitHub Models was retired mid-project, and Gemini's free tier turned out to be 20 requests a day: enough for a demo, not for a 40-scenario suite. Gemini 3 also rejects any tool-result turn that doesn't echo the call's thought signature, which LangChain silently dropped. A provider-neutral message layer and replay cassettes made both survivable.
+
+**Controls belong in the harness.** The guarantees I can actually defend don't rely on the model behaving. The engine computes every number, grounding re-runs the tools, `autonomy.yaml` sets the tier, and the only write is a PENDING row a human approves.
+
+**What I'd do next:** re-record the smoke suite with the fixed specialist on a machine with a GPU, run `full` at k=3, then run the four ablations. SHT-05 is where I'd start on reasoning quality.

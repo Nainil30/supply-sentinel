@@ -1,9 +1,13 @@
 """Exception queue: sortable, filterable table."""
 
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 from supply_sentinel.app.components import common
+
+DETAIL_PAGE = Path(__file__).with_name("detail.py")  # absolute: see streamlit_app.py
 
 svc = common.page_header(
     "Exception queue", "Click a column header to sort. Select a row to open it."
@@ -48,4 +52,4 @@ else:
     if event.selection.rows:
         chosen = shown[event.selection.rows[0]].exception_id
         st.session_state["exception_id"] = chosen
-        st.page_link("pages/detail.py", label=f"Open {chosen} in Exception detail")
+        st.page_link(DETAIL_PAGE, label=f"Open {chosen} in Exception detail")
