@@ -1,9 +1,13 @@
 """Overview: snapshot facts, KPI row, top 10 exceptions by severity."""
 
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 from supply_sentinel.app.components import common
+
+DETAIL_PAGE = Path(__file__).with_name("detail.py")  # absolute: see streamlit_app.py
 
 svc = common.page_header("Overview", "Weekly supply sweep for Orbis Networks (synthetic data).")
 ov = svc.overview()
@@ -58,6 +62,4 @@ else:
     picked = event.selection.rows
     if picked:
         st.session_state["exception_id"] = rows[picked[0]].exception_id
-        st.page_link(
-            "pages/detail.py", label=f"Open {rows[picked[0]].exception_id} in Exception detail"
-        )
+        st.page_link(DETAIL_PAGE, label=f"Open {rows[picked[0]].exception_id} in Exception detail")

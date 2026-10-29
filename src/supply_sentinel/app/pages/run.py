@@ -1,9 +1,13 @@
 """Run: start an agent run and watch it move through the graph."""
 
+from pathlib import Path
+
 import streamlit as st
 
 from supply_sentinel.app.components import common
 from supply_sentinel.app.services import ServiceError
+
+APPROVALS_PAGE = Path(__file__).with_name("approvals.py")  # absolute: see streamlit_app.py
 
 svc = common.page_header("Run", "Starts the LangGraph agent and pauses at the approval gate.")
 c = st.columns(3)
@@ -27,7 +31,7 @@ if st.button("Start run", type="primary", disabled=blocked):
             run_id = svc.start_run(on_node=progress)
         info = svc.run_info(run_id)
         st.success(f"Run {run_id} paused at the approval gate with {info.pending_count} waiting.")
-        st.page_link("pages/approvals.py", label="Go to Approvals")
+        st.page_link(APPROVALS_PAGE, label="Go to Approvals")
     except (ServiceError, FileNotFoundError, KeyError) as exc:
         st.error(f"Run failed: {exc}")
     except Exception as exc:  # a cassette miss or provider error must not crash the console

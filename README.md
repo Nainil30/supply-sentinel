@@ -10,8 +10,7 @@ Hosted demo: _link added after deploy, see [docs/DEPLOY.md](docs/DEPLOY.md)._ De
 
 ## The problem
 
-<!-- DRAFT (first person, from docs/PROJECT_BRIEF.md). Owner: rewrite in your own words. -->
-Every week I own several switch platforms in different lifecycle phases, and most of my time goes into gathering and reconciling: netting demand against inventory, purchase orders and supplier commits for dozens of shared parts, catching shortages early enough to expedite or pull in, sizing a last-time buy when a supplier announces end of life, and spotting excess and obsolete exposure while orders can still be moved. The math is well understood. The judgment (root cause, trade-offs, who to tell and how) is where a planner earns their pay, so I built a tool that does the gathering and the math exactly, and leaves the decision to me.
+As a supply planner, my week starts with the same sweep: net demand against on-hand, purchase orders and supplier commits for every shared part on platforms that sit in different lifecycle phases. Most of that time is gathering and reconciling, not deciding. A shortage spotted on Thursday instead of Monday is the difference between a pull-in and an expedite fee. A last-time buy sized by gut feel either strands inventory or stops a line. Excess shows up after the cancel window has closed. The math behind all of this is well understood. The judgment isn't: why it happened, which trade-off to make, who needs to hear it and how. So I built a copilot that does the gathering and the math exactly, shows its work, and leaves the decision with the planner.
 
 ## Architecture
 
