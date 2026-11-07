@@ -36,7 +36,7 @@ OpenTelemetry spans.
 |---|---|
 | `src/supply_sentinel/datagen/` | Seeded synthetic data generator (DuckDB) and scenario injection |
 | `src/supply_sentinel/engine/` | Netting, exceptions, root cause, LTB sizing, E&O, what-if, rules baseline. Pure functions |
-| `src/supply_sentinel/mcp_server/` | 15 read tools + 1 write tool (`record_recommendation`, PENDING only), resources, prompts |
+| `src/supply_sentinel/mcp_server/` | 15 MCP tools: 14 read-only, 1 write (`record_recommendation`, PENDING only), resources, prompts |
 | `src/supply_sentinel/agent/` | LangGraph graph, nodes, specialists, validation, policy, MCP bridge |
 | `src/supply_sentinel/llm/` | Provider layer (Ollama, OpenAI-compatible/Gemini, Anthropic), replay cassettes |
 | `src/supply_sentinel/evals/` | Eval runner, oracle, scorers, LLM judge, calibration, leaderboard report |
@@ -148,6 +148,14 @@ The agent does not yet beat the rules baseline. Why, and what fixed the main fai
 | `release.yml` | tag `v*` | builds and pushes the Docker image to GHCR, creates a GitHub release |
 
 Dependabot opens weekly PRs for Python packages and GitHub Actions. Merge them when CI is green.
+
+Repository guardrails on GitHub:
+
+| Control | What it does |
+|---|---|
+| Ruleset `protect-main` | `main` only changes through a pull request whose `test` check (from `ci.yml`) passes; no force pushes or deletion |
+| CodeQL default setup | Scans Python and the workflows on every push and PR; findings appear under Security > Code scanning |
+| `.github/CODEOWNERS` | Marks eval labels, scenarios, baselines, `config/autonomy.yaml`, injection patterns and agent instructions as owner-reviewed; the GitHub side of the local path-guard hook |
 
 ## 10. Claude Code harness
 
