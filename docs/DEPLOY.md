@@ -4,7 +4,7 @@ The hosted demo runs the Planner Console in replay mode only (`--hosted`), so it
 
 ## Streamlit Community Cloud
 
-1. Push the repo and tag (see the commands in the Phase 9 report / `_private/OWNER_REVIEW.md`).
+1. Make sure `main` is up to date on GitHub.
 2. Go to share.streamlit.io, sign in with GitHub, "Create app", pick this repo, branch `main`.
 3. Main file path: `hosted_app.py`. Python 3.12. Dependencies come from `pyproject.toml` / `uv.lock` (verify current free-tier support at deploy time).
 4. Do not add any secrets. Deploy.
@@ -18,4 +18,4 @@ New Space, SDK Docker, push this repo. The Dockerfile's default command serves t
 
 ## GIF
 
-Record 60 to 90 seconds following `docs/DEMO_SCRIPT.md`, save as `docs/demo.gif`, and add it under the README title.
+`docs/demo.gif` (in the README) is a six-page tour captured from the console in replay mode. To re-record, follow `docs/DEMO_SCRIPT.md` with any screen recorder and save over it.
