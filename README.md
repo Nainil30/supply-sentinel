@@ -8,6 +8,8 @@ An agentic supply-execution copilot for a fictional data center networking OEM: 
 
 Hosted demo: _link added after deploy, see [docs/DEPLOY.md](docs/DEPLOY.md)._ Demo GIF: _to be recorded, see [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)._
 
+**Everything in one place (commands, layout, config, evals, CI, status): [docs/GUIDE.md](docs/GUIDE.md).**
+
 ## The problem
 
 As a supply planner, my week starts with the same sweep: net demand against on-hand, purchase orders and supplier commits for every shared part on platforms that sit in different lifecycle phases. Most of that time is gathering and reconciling, not deciding. A shortage spotted on Thursday instead of Monday is the difference between a pull-in and an expedite fee. A last-time buy sized by gut feel either strands inventory or stops a line. Excess shows up after the cancel window has closed. The math behind all of this is well understood. The judgment isn't: why it happened, which trade-off to make, who needs to hear it and how. So I built a copilot that does the gathering and the math exactly, shows its work, and leaves the decision with the planner.
