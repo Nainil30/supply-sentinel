@@ -1,0 +1,12 @@
+# Changes to evals, policy and agent instructions need the owner's review.
+# Mirrors the local Claude Code hooks (.claude/hooks/guard_paths.py) on GitHub.
+/evals/human_labels/        @Nainil30
+/evals/reference_labels/    @Nainil30
+/evals/scenarios/           @Nainil30
+/evals/results/baseline_*   @Nainil30
+/config/autonomy.yaml       @Nainil30
+/config/untrusted_patterns.yaml @Nainil30
+/AGENTS.md                  @Nainil30
+/CLAUDE.md                  @Nainil30
+/.claude/                   @Nainil30
+/.github/                   @Nainil30
