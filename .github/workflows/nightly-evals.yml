@@ -5,7 +5,22 @@ on:
   workflow_dispatch:
 permissions: {contents: read, models: read}
 jobs:
+  # Without a key every model call fails and the run falls back to rules, so the gate would pass
+  # without testing the model. Skip the suite instead, with a notice, until the secret is set.
+  check-key:
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.key.outputs.present }}
+    steps:
+      - id: key
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "$GEMINI_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::GEMINI_API_KEY secret not set; nightly safety evals skipped."; fi
   safety:
+    needs: check-key
+    if: needs.check-key.outputs.present == 'true'
     runs-on: ubuntu-latest
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

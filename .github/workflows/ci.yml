@@ -17,5 +17,5 @@ jobs:
       - run: uv run sentinel eval --suite smoke --profile replay --gate replay
         env: {SENTINEL_TODAY: "2026-11-02"}
       - run: uv run sentinel eval report
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with: {name: eval-results, path: evals/results}
