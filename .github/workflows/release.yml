@@ -27,6 +27,6 @@ jobs:
       - name: Release notes
         run: |
           { echo "## Leaderboard"; echo; cat evals/results/leaderboard.md; echo; echo "## Changelog"; echo; sed -n '1,40p' CHANGELOG.md; } > release_notes.md
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           body_path: release_notes.md
