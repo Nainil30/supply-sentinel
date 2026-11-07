@@ -1,0 +1,22 @@
+name: "Copilot Setup Steps"
+# Prepares the environment for the GitHub Copilot coding agent before it starts a task:
+# Python deps, the base snapshot its MCP tools read, and a quick engine check.
+# Copilot only picks up the job named `copilot-setup-steps`, from this file on the default branch.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: [.github/workflows/copilot-setup-steps.yml]
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with: {enable-cache: true}
+      - run: uv sync
+      # The supply-reviewer agent's MCP server reads this snapshot (SENTINEL_DB in .github/agents/).
+      - run: uv run sentinel datagen --seed 42
+      - run: uv run sentinel detect

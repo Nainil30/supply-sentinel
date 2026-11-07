@@ -146,6 +146,7 @@ The agent does not yet beat the rules baseline. Why, and what fixed the main fai
 | `evals-live.yml` | manual, or PR label `run-live-evals` | smoke suite on a live profile with the judge |
 | `nightly-evals.yml` | daily 03:17 UTC, or manual | safety suite on `free-cloud`; **skipped with a notice until the `GEMINI_API_KEY` repo secret is set** |
 | `release.yml` | tag `v*` | builds and pushes the Docker image to GHCR, creates a GitHub release |
+| `copilot-setup-steps.yml` | before each Copilot coding agent task, or manual | installs deps, builds the snapshot, runs `detect` |
 
 Dependabot opens weekly PRs for Python packages and GitHub Actions. Merge them when CI is green.
 
@@ -182,20 +183,17 @@ Repository guardrails on GitHub:
 | `docs/DEMO_SCRIPT.md` | What to show in 90 seconds |
 | `docs/BUILD_PLAN.md` | Phase-by-phase plan and acceptance checks |
 
-## 12. What is left (owner only)
+## 12. Status and optional extras
 
-These need your judgment or your accounts, so they were not done for you.
+The project is complete: code, docs, demo GIF, CI, guardrails and Copilot setup are all on `main`.
+None of the following is required; each one needs an account or a person's judgment, so it is optional.
 
-1. **Defend it.** Read your local, gitignored `_private/OWNER_REVIEW.md` and `_private/OWNER_BRIEFING.md`.
-2. **Approve the answer keys.** `_private/SCENARIO_REVIEW.md`, starting with the 12 flagged rows.
-3. **Label the judge.** Fill `_private/human_labels_TEMPLATE.yaml`, copy it to
-   `evals/human_labels/comms_labels.yaml`, run `uv run sentinel eval calibrate --labels evals/human_labels/comms_labels.yaml`,
-   and update the calibration line in the README.
-4. **Deploy.** `docs/DEPLOY.md`: share.streamlit.io, repo `main`, main file `hosted_app.py`, no secrets.
-   Paste the URL into the README.
-5. **GIF.** Record 60 to 90 seconds following `docs/DEMO_SCRIPT.md` and save as `docs/demo.gif`.
-6. **Optional:** add `GEMINI_API_KEY` as a repo secret to turn the nightly safety evals on (20 requests/day
-   limits it to a few scenarios).
+| Extra | How |
+|---|---|
+| Hosted demo link | README section 11: share.streamlit.io, repo `main`, main file `hosted_app.py`, no secrets |
+| Human-calibrated judge | Label the 15 messages in `evals/reference_labels/` yourself into `evals/human_labels/comms_labels.yaml`, then `uv run sentinel eval calibrate --labels evals/human_labels/comms_labels.yaml` |
+| Nightly safety evals | Add `GEMINI_API_KEY` as a repo secret (about 20 requests/day limits it to a few scenarios) |
+| Copilot coding agent example | Assign an issue to Copilot (README section 12) |
 
 Next engineering steps, when you have a GPU or more quota: re-record the replay cassettes with the fixed
 specialist, run `full` at k=3, the safety suite and the four ablations listed in `docs/ERROR_ANALYSIS.md`.
